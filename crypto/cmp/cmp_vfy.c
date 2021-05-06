@@ -141,17 +141,19 @@ int OSSL_CMP_validate_cert_path(const OSSL_CMP_CTX *ctx,
     return valid;
 }
 
-static int verify_cb_cert(X509_STORE* ts, X509* cert, int err)
+static int verify_cb_cert(X509_STORE *ts, X509 *cert, int err)
 {
-    X509_STORE_CTX *csc = X509_STORE_CTX_new();
+    X509_STORE_CTX_verify_cb verify_cb;
+    X509_STORE_CTX *csc;
     int ok = 0;
 
-    if (csc != NULL && X509_STORE_CTX_init(csc, ts, cert, NULL)) {
-        X509_STORE_CTX_verify_cb verify_cb = X509_STORE_CTX_get_verify_cb(csc);
-
+    if (ts == NULL || (verify_cb = X509_STORE_get_verify_cb(ts)) == NULL)
+        return ok;
+    if ((csc = X509_STORE_CTX_new()) != NULL
+            && X509_STORE_CTX_init(csc, ts, cert, NULL)) {
         X509_STORE_CTX_set_error(csc, err);
         X509_STORE_CTX_set_current_cert(csc, cert);
-        ok = verify_cb != 0 && (*verify_cb)(0, csc) != 0;
+        ok = (*verify_cb)(0, csc);
     }
     X509_STORE_CTX_free(csc);
     return ok;
@@ -251,7 +253,7 @@ static int cert_acceptable(const OSSL_CMP_CTX *ctx,
     int self_issued = X509_check_issued(cert, cert) == X509_V_OK;
     char *str;
     X509_VERIFY_PARAM *vpm = ts != NULL ? X509_STORE_get0_param(ts) : NULL;
-    int time_cmp, err;
+    int time_cmp;
 
     ossl_cmp_log3(INFO, ctx, " considering %s%s %s with..",
                   self_issued ? "self-issued ": "", desc1, desc2);
@@ -274,14 +276,14 @@ static int cert_acceptable(const OSSL_CMP_CTX *ctx,
     time_cmp = X509_cmp_timeframe(vpm, X509_get0_notBefore(cert),
                                   X509_get0_notAfter(cert));
     if (time_cmp != 0) {
-        err = time_cmp > 0 ? X509_V_ERR_CERT_HAS_EXPIRED
-                           : X509_V_ERR_CERT_NOT_YET_VALID;
-        if (ctx->log_cb != NULL /* logging not temporarily disabled */
-                && ts != NULL && X509_STORE_get_verify_cb(ts) != NULL)
-            (void)verify_cb_cert(ts, cert, err); /* allows logging the error */
+        int err = time_cmp > 0 ? X509_V_ERR_CERT_HAS_EXPIRED
+                               : X509_V_ERR_CERT_NOT_YET_VALID;
+
         ossl_cmp_warn(ctx, time_cmp > 0 ? "cert has expired"
                                         : "cert is not yet valid");
-        return 0;
+        if (ctx->log_cb != NULL /* logging not temporarily disabled */
+                && verify_cb_cert(ts, cert, err) <= 0)
+            return 0;
     }
 
     if (!check_name(ctx, 1,
