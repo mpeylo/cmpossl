@@ -278,6 +278,8 @@ static const X509_NAME *determine_subj(OSSL_CMP_CTX *ctx,
 OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
 {
     OSSL_CRMF_MSG *crm = NULL;
+    int central_keygen = OSSL_CMP_CTX_get_option(ctx, OSSL_CMP_OPT_POPO_METHOD)
+        == OSSL_CRMF_POPO_NONE;
     X509 *refcert = ctx->oldCert != NULL ? ctx->oldCert : ctx->cert;
     /* refcert defaults to current client cert */
     EVP_PKEY *rkey = OSSL_CMP_CTX_get0_newPkey(ctx, 0);
@@ -295,11 +297,13 @@ OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
 
     if (rkey == NULL && ctx->p10CSR != NULL)
         rkey = X509_REQ_get0_pubkey(ctx->p10CSR);
+#if 0 /* TODO */
     if (rkey == NULL && refcert != NULL)
         rkey = X509_get0_pubkey(refcert);
     if (rkey == NULL)
         rkey = ctx->pkey; /* default is independent of ctx->oldCert */
-    if (rkey == NULL) {
+#endif
+    if (rkey == NULL && ctx->p10CSR != NULL /* TODO */) {
 #ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
         ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
         return NULL;
@@ -318,6 +322,7 @@ OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
              * it could be NULL if centralized key creation was supported
              */
             || !OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_MSG_get0_tmpl(crm), rkey,
+                                            central_keygen,
                                             subject, issuer, NULL /* serial */))
         goto err;
     if (ctx->days != 0) {
@@ -552,12 +557,12 @@ OSSL_CMP_MSG *ossl_cmp_rr_new(OSSL_CMP_CTX *ctx)
     /* Fill the template from the contents of the certificate to be revoked */
     ret = ctx->oldCert != NULL
     ? OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
-                                  NULL /* pubkey would be redundant */,
+                                  NULL /* pubkey would be redundant */, 0,
                                   NULL /* subject would be redundant */,
                                   X509_get_issuer_name(ctx->oldCert),
                                   X509_get0_serialNumber(ctx->oldCert))
     : OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
-                                  X509_REQ_get0_pubkey(ctx->p10CSR),
+                                  X509_REQ_get0_pubkey(ctx->p10CSR), 0,
                                   X509_REQ_get_subject_name(ctx->p10CSR),
                                   NULL, NULL);
     if (!ret)
@@ -1039,21 +1044,50 @@ ossl_cmp_certrepmessage_get0_certresponse(const OSSL_CMP_CERTREPMESSAGE *crm,
 }
 
 /*-
- * Retrieve the newly enrolled certificate from the given certResponse crep.
+ * Retrieve newly enrolled certificate and key from the given certResponse crep.
  * In case of indirect POPO uses the libctx and propq from ctx and private key.
+ * In case of central key generation, updates ctx->newPkey.
  * Returns a pointer to a copy of the found certificate, or NULL if not found.
  */
-X509 *ossl_cmp_certresponse_get1_cert(const OSSL_CMP_CERTRESPONSE *crep,
-                                      const OSSL_CMP_CTX *ctx, EVP_PKEY *pkey)
+X509 *ossl_cmp_certresponse_get1_cert_key(const OSSL_CMP_CERTRESPONSE *crep,
+                                          const OSSL_CMP_CTX *ctx, EVP_PKEY *pkey)
 {
+    int central_keygen = OSSL_CMP_CTX_get_option(ctx, OSSL_CMP_OPT_POPO_METHOD)
+        == OSSL_CRMF_POPO_NONE;
     OSSL_CMP_CERTORENCCERT *coec;
     X509 *crt = NULL;
+    OSSL_CRMF_ENCRYPTEDKEY *encr_key;
 
     if (!ossl_assert(crep != NULL && ctx != NULL))
         return NULL;
 
-    if (crep->certifiedKeyPair
-            && (coec = crep->certifiedKeyPair->certOrEncCert) != NULL) {
+    if (crep->certifiedKeyPair == NULL) {
+        ERR_raise(ERR_LIB_CMP, CMP_R_CERTIFICATE_NOT_FOUND);
+        return NULL;
+    }
+    encr_key = crep->certifiedKeyPair->privateKey;
+    if (encr_key == NULL && central_keygen) {
+        ERR_raise(ERR_LIB_CMP, CMP_R_MISSING_CENTRAL_GEN_KEY);
+        return NULL;
+    }
+    if (encr_key != NULL) {
+        if (!central_keygen) {
+            ERR_raise(ERR_LIB_CMP, CMP_R_UNEXPECTED_CENTRAL_GEN_KEY);
+            return NULL;
+        }
+        /* found encrypted private key, try to extract */
+        pkey = OSSL_CRMF_ENCRYPTEDKEY_get1_key(encr_key, ctx->trusted,
+                                               ctx->untrusted,
+                                               ctx->pkey, ctx->cert,
+                                               ctx->secretValue);
+        if (pkey == NULL) {
+            ERR_raise(ERR_LIB_CMP, CMP_R_FAILED_EXTRACTING_CENTRAL_GEN_KEY);
+            return NULL;
+        }
+        OSSL_CMP_CTX_set0_newPkey((OSSL_CMP_CTX *)ctx, 1, pkey);
+    }
+
+    if ((coec = crep->certifiedKeyPair->certOrEncCert) != NULL) {
         switch (coec->type) {
         case OSSL_CMP_CERTORENCCERT_CERTIFICATE:
             crt = X509_dup(coec->value.certificate);
@@ -1064,8 +1098,7 @@ X509 *ossl_cmp_certresponse_get1_cert(const OSSL_CMP_CERTRESPONSE *crep,
                 ERR_raise(ERR_LIB_CMP, CMP_R_MISSING_PRIVATE_KEY);
                 return NULL;
             }
-            crt =
-                OSSL_CRMF_ENCRYPTEDVALUE_get1_encCert(coec->value.encryptedCert,
+            crt = OSSL_CRMF_ENCRYPTEDKEY_get1_encCert(coec->value.encryptedCert,
                                                       ctx->libctx, ctx->propq,
                                                       pkey);
             break;

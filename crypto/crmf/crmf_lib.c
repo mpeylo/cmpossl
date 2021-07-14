@@ -576,12 +576,30 @@ const ASN1_INTEGER *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID *c
     return cid != NULL ? cid->serialNumber : NULL;
 }
 
+/* TODO remove when X509_PUBKEY_set0_public_key() has been added to X509 API */
+/* copied from ../x509/x_pubkey.c: */
+struct X509_pubkey_st {
+    X509_ALGOR *algor;
+    ASN1_BIT_STRING *public_key;
+    EVP_PKEY *pkey;
+};
+/* TODO move X509_PUBKEY_set0_public_key() or the like to ../x509/x_pubkey.c */
+static void X509_PUBKEY_set0_public_key(X509_PUBKEY *pub, unsigned char *penc, int penclen)
+{
+    OPENSSL_free(pub->public_key->data);
+    pub->public_key->data = penc;
+    pub->public_key->length = penclen;
+    /* Set number of unused bits to zero */
+    pub->public_key->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
+    pub->public_key->flags |= ASN1_STRING_FLAG_BITS_LEFT;
+}
+
 /*-
  * fill in certificate template.
  * Any value argument that is NULL will leave the respective field unchanged.
  */
 int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
-                                EVP_PKEY *pubkey,
+                                EVP_PKEY *pubkey, int central_keygen,
                                 const X509_NAME *subject,
                                 const X509_NAME *issuer,
                                 const ASN1_INTEGER *serial)
@@ -601,9 +619,113 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
     }
     if (pubkey != NULL && !X509_PUBKEY_set(&tmpl->publicKey, pubkey))
         return 0;
+    if (pubkey != NULL && central_keygen) {
+        /* set public_key bit string to NULL */
+        X509_PUBKEY_set0_public_key(tmpl->publicKey, NULL, 0);
+    }
     return 1;
 }
 
+
+/* TODO move to cms.h.in */
+void
+CMS_ContentInfo_set0_EnvelopedData(CMS_ContentInfo *ci, CMS_EnvelopedData *env);
+void CMS_ContentInfo_set0_SignedData(CMS_ContentInfo *ci, CMS_SignedData *sd);
+CMS_SignedData *d2i_CMS_SignedData_bio(BIO *bp, CMS_SignedData **sd);
+
+/* extract private key from envelopedData in encryptedKey */
+EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
+                                          X509_STORE *ts,
+                                          STACK_OF(X509) *untrusted,
+                                          EVP_PKEY *pkey, X509 *cert,
+                                          ASN1_OCTET_STRING *secret) {
+
+    EVP_PKEY *ret = NULL;
+    CMS_ContentInfo *ci = NULL;
+    BIO *signed_data_bio = NULL;
+    CMS_SignedData *sd;
+    CMS_ContentInfo *signed_ci = NULL;
+    BIO *pkey_bio = NULL;
+
+
+    if (encryptedKey == NULL) {
+         ERR_raise(ERR_LIB_CRMF, CRMF_R_NULL_ARGUMENT);
+         goto end;
+    }
+    if ((pkey == NULL) != (cert == NULL)) {
+         ERR_raise(ERR_LIB_CRMF, ERR_R_PASSED_INVALID_ARGUMENT);
+         goto end;
+    }
+    if (encryptedKey->type != OSSL_CRMF_ENCRYPTEDKEY_ENVELOPEDDATA) {
+        /* TODO: use better CRMF_R_ERROR_* code */
+        /* "unsupported type of EncryptedKey" */
+        ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
+        goto end;
+    }
+    if (encryptedKey->value.envelopedData == NULL) {
+        /* TODO: use better CRMF_R_ERROR_* code */
+        /* "EncryptedKey missing" */
+        ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
+        goto end;
+    }
+
+    /* unpack EnvelopedData */
+    if ((ci = CMS_ContentInfo_new()) == NULL
+            || (signed_data_bio = BIO_new(BIO_s_mem())) == NULL)
+         goto end;
+    CMS_ContentInfo_set0_EnvelopedData(ci, encryptedKey->value.envelopedData);
+    if (secret != NULL
+            && CMS_decrypt_set1_password(ci, (unsigned char *)
+                                         ASN1_STRING_get0_data(secret),
+                                         ASN1_STRING_length(secret)) != 1)
+        goto end;
+    if (CMS_decrypt(ci, pkey, cert, NULL, signed_data_bio, 0) != 1) {
+        /* TODO: use better CRMF_R_ERROR_* code*/
+        /* "unable to decrypt EncryptedKey" */
+        ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
+        goto end;
+    }
+
+    /* unpack SignedData */
+    sd = d2i_CMS_SignedData_bio(signed_data_bio, NULL);
+    if (sd == NULL
+            || (signed_ci = CMS_ContentInfo_new()) == NULL
+            || (pkey_bio = BIO_new(BIO_s_mem())) == NULL)
+         goto end;
+    CMS_ContentInfo_set0_SignedData(signed_ci, sd);
+    /*
+     * TODO:
+     * Find better solution than adding CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN
+     * which is used as workaround for missing CMS purpose.
+     * From manpage of CMS_verify: "Each signing certificate is chain verified
+     * using the *smimesign* purpose and the supplied trusted certificate store"
+     */
+    if (CMS_verify(signed_ci, untrusted, ts, NULL, pkey_bio,
+                   CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN) != 1) {
+        /* TODO: use better CRMF_R_ERROR_* code*/
+        /* "unable to verify signature of EncryptedKey" */
+        ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
+        goto end;
+    }
+    /* unpack AsymmetricKeyPackage */
+    ret = d2i_PrivateKey_bio(pkey_bio, NULL);
+    if (ret == NULL) {
+        /* TODO: use better CRMF_R_ERROR_* code*/
+        /* "unable to unpack AsymmetricKeyPackage" */
+        ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
+        goto end;
+    }
+
+  end:
+    if (ci != NULL)
+        CMS_ContentInfo_set0_EnvelopedData(ci, NULL);
+    CMS_ContentInfo_free(ci);
+    BIO_free(signed_data_bio);
+    CMS_ContentInfo_free(signed_ci);
+    BIO_free(pkey_bio);
+
+    return ret;
+}
 
 /*-
  * Decrypts the certificate in the given encryptedValue using private key pkey.
@@ -613,7 +735,7 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
  * returns NULL on error or if no certificate available
  */
 X509
-*OSSL_CRMF_ENCRYPTEDVALUE_get1_encCert(const OSSL_CRMF_ENCRYPTEDVALUE *ecert,
+*OSSL_CRMF_ENCRYPTEDKEY_get1_encCert(const OSSL_CRMF_ENCRYPTEDKEY *ecert,
                                        OSSL_LIB_CTX *libctx, const char *propq,
                                        EVP_PKEY *pkey)
 {
@@ -630,13 +752,16 @@ X509
     int n, outlen = 0;
     EVP_PKEY_CTX *pkctx = NULL; /* private key context */
 
-    if (ecert == NULL || ecert->symmAlg == NULL || ecert->encSymmKey == NULL
-            || ecert->encValue == NULL || pkey == NULL) {
+    if (ecert == NULL
+            || ecert->value.encryptedValue == NULL
+            || ecert->value.encryptedValue->symmAlg == NULL
+            || ecert->value.encryptedValue->encSymmKey == NULL
+            || pkey == NULL) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_NULL_ARGUMENT);
         return NULL;
     }
 
-    if ((symmAlg = OBJ_obj2nid(ecert->symmAlg->algorithm)) == 0) {
+    if ((symmAlg = OBJ_obj2nid(ecert->value.encryptedValue->symmAlg->algorithm)) == 0) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_UNSUPPORTED_CIPHER);
         return NULL;
     }
@@ -652,7 +777,7 @@ X509
     /* first the symmetric key needs to be decrypted */
     pkctx = EVP_PKEY_CTX_new_from_pkey(libctx, pkey, propq);
     if (pkctx != NULL && EVP_PKEY_decrypt_init(pkctx)) {
-        ASN1_BIT_STRING *encKey = ecert->encSymmKey;
+        ASN1_BIT_STRING *encKey = ecert->value.encryptedValue->encSymmKey;
         size_t failure;
         int retval;
 
@@ -675,7 +800,7 @@ X509
     }
     if ((iv = OPENSSL_malloc(EVP_CIPHER_get_iv_length(cipher))) == NULL)
         goto end;
-    if (ASN1_TYPE_get_octetstring(ecert->symmAlg->parameter, iv,
+    if (ASN1_TYPE_get_octetstring(ecert->value.encryptedValue->symmAlg->parameter, iv,
                                   EVP_CIPHER_get_iv_length(cipher))
         != EVP_CIPHER_get_iv_length(cipher)) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_MALFORMED_IV);
@@ -686,7 +811,7 @@ X509
      * d2i_X509 changes the given pointer, so use p for decoding the message and
      * keep the original pointer in outbuf so the memory can be freed later
      */
-    if ((p = outbuf = OPENSSL_malloc(ecert->encValue->length +
+    if ((p = outbuf = OPENSSL_malloc(ecert->value.encryptedValue->encValue->length +
                                      EVP_CIPHER_get_block_size(cipher))) == NULL
             || (evp_ctx = EVP_CIPHER_CTX_new()) == NULL)
         goto end;
@@ -694,8 +819,8 @@ X509
 
     if (!EVP_DecryptInit(evp_ctx, cipher, ek, iv)
             || !EVP_DecryptUpdate(evp_ctx, outbuf, &outlen,
-                                  ecert->encValue->data,
-                                  ecert->encValue->length)
+                                  ecert->value.encryptedValue->encValue->data,
+                                  ecert->value.encryptedValue->encValue->length)
             || !EVP_DecryptFinal(evp_ctx, outbuf + outlen, &n)) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_CERTIFICATE);
         goto end;
@@ -714,4 +839,25 @@ X509
     OPENSSL_clear_free(ek, eksize);
     OPENSSL_free(iv);
     return cert;
+}
+
+
+/* TODO move to ../cms */
+# include "/home/david/openssl/prepare-1.1.1/crypto/cms/cms_local.h" /* TODO remove when decls have been moved */
+void
+CMS_ContentInfo_set0_EnvelopedData(CMS_ContentInfo *ci, CMS_EnvelopedData *env)
+{
+    ci->contentType = OBJ_nid2obj(NID_pkcs7_enveloped);
+    ci->d.envelopedData = env;
+}
+
+void CMS_ContentInfo_set0_SignedData(CMS_ContentInfo *ci, CMS_SignedData *sd)
+{
+    ci->contentType = OBJ_nid2obj(NID_pkcs7_signed);
+    ci->d.signedData = sd;
+}
+
+CMS_SignedData *d2i_CMS_SignedData_bio(BIO *bp, CMS_SignedData **sd)
+{
+    return ASN1_item_d2i_bio(ASN1_ITEM_rptr(CMS_SignedData), bp, sd);
 }
