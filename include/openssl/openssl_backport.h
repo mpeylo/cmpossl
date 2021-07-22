@@ -331,8 +331,6 @@ DECLARE_ASN1_DUP_FUNCTION(X509_PUBKEY)
 #  define X509_STORE_CTX_new_ex(libctx, propq) \
     ((void)(libctx), (void)(propq), X509_STORE_CTX_new())
 #  define RAND_bytes_ex(ctx, buf, num, x) RAND_bytes(((void)(ctx), buf), num)
-typedef struct ossl_cmp_ctx_st OSSL_CMP_CTX;
-typedef BIO *(*OSSL_HTTP_bio_cb_t)(BIO *b, void *arg, int connect, int detail);
 int OSSL_HTTP_proxy_connect(BIO *bio, const char *server, const char *port,
                             const char *proxyuser, const char *proxypass,
                             int timeout, BIO *bio_err, const char *prog);
@@ -421,8 +419,6 @@ STACK_OF(X509) *X509_STORE_get1_all_certs(X509_STORE *store);
 int X509_self_signed(X509 *cert, int verify_signature);
 int X509_add_cert(STACK_OF(X509) *sk, X509 *cert, int flags);
 int X509_add_certs(STACK_OF(X509) *sk, STACK_OF(X509) *certs, int flags);
-int OSSL_CMP_proxy_connect(BIO *bio, OSSL_CMP_CTX *ctx,
-                           BIO *bio_err, const char *prog);
 /* from crypto/x509.h: */
 int x509_set0_libctx(X509 *x, OSSL_LIB_CTX *libctx, const char *propq);
 int ossl_x509v3_cache_extensions(X509 *x);
