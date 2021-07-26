@@ -824,7 +824,7 @@ EVP_PKEY *OSSL_CMP_CTX_get0_newPkey(const OSSL_CMP_CTX *ctx, int priv)
         return priv && !ctx->newPkey_priv ? NULL : ctx->newPkey;
     if (ctx->p10CSR != NULL)
         return priv ? NULL : X509_REQ_get0_pubkey(ctx->p10CSR);
-    return ctx->pkey; /* may be NULL */
+    return NULL;
 }
 
 /* Set the given transactionID to the context */

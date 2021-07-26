@@ -278,8 +278,7 @@ static const X509_NAME *determine_subj(OSSL_CMP_CTX *ctx,
 OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
 {
     OSSL_CRMF_MSG *crm = NULL;
-    X509 *refcert = ctx->oldCert != NULL ? ctx->oldCert : ctx->cert;
-    /* refcert defaults to current client cert */
+    X509 *refcert = ctx->oldCert;
     EVP_PKEY *rkey = OSSL_CMP_CTX_get0_newPkey(ctx, 0);
     STACK_OF(GENERAL_NAME) *default_sans = NULL;
     const X509_NAME *ref_subj =
@@ -295,8 +294,6 @@ OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
 
     if (rkey == NULL && ctx->p10CSR != NULL)
         rkey = X509_REQ_get0_pubkey(ctx->p10CSR);
-    if (rkey == NULL)
-        rkey = ctx->pkey; /* default is independent of ctx->oldCert */
     if (rkey == NULL) {
 #ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
         ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
@@ -414,15 +411,8 @@ OSSL_CMP_MSG *ossl_cmp_certreq_new(OSSL_CMP_CTX *ctx, int type,
     /* body */
     /* For P10CR the content has already been set in OSSL_CMP_MSG_create */
     if (type != OSSL_CMP_PKIBODY_P10CR) {
-        EVP_PKEY *privkey = OSSL_CMP_CTX_get0_newPkey(ctx, 1);
+        EVP_PKEY *privkey = ctx->newPkey;
 
-        /*
-         * privkey is NULL in case ctx->newPkey does not include a private key.
-         * We then may try to use ctx->pkey as fallback/default, but only
-         * if ctx-> newPkey does not include a (non-matching) public key:
-         */
-        if (privkey == NULL && OSSL_CMP_CTX_get0_newPkey(ctx, 0) == NULL)
-            privkey = ctx->pkey; /* default is independent of ctx->oldCert */
         if (ctx->popoMethod == OSSL_CRMF_POPO_SIGNATURE && privkey == NULL) {
             ERR_raise(ERR_LIB_CMP, CMP_R_MISSING_PRIVATE_KEY);
             goto err;
