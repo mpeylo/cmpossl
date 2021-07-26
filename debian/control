@@ -1,8 +1,8 @@
 Source: libcmp
 Section: libs
 Priority: optional
-Maintainer: David von Oheimb <David.von.Oheimb@siemens.com>
-Build-Depends: autotools-dev, libssl-dev, pkg-config, debhelper (>= 9)
+Maintainer: David von Oheimb <david.von.oheimb@siemens.com>
+Build-Depends: libssl-dev, pkg-config, debhelper (>= 9)
 Standards-Version: 4.0.0
 Homepage: https://github.com/mpeylo/cmpossl
 
