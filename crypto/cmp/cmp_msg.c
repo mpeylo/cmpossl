@@ -292,13 +292,14 @@ OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
     /* RFC5280: subjectAltName MUST be critical if subject is null */
     X509_EXTENSIONS *exts = NULL;
 
-    if (rkey == NULL && ctx->p10CSR != NULL)
+    if (rkey == NULL && ctx->p10CSR != NULL) {
         rkey = X509_REQ_get0_pubkey(ctx->p10CSR);
-    if (rkey == NULL) {
+        if (rkey == NULL) {
 #ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-        ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
-        return NULL;
+            ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
+            return NULL;
 #endif
+        }
     }
     if (for_KUR && refcert == NULL && ctx->p10CSR == NULL) {
         ERR_raise(ERR_LIB_CMP, CMP_R_MISSING_REFERENCE_CERT);
