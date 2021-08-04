@@ -29,7 +29,7 @@ EJBCA,Insta,description, -section,val, -crls,val, -cdps,val, -ocsp,val, -crls_ti
 ,,,,,,,,,,,,,,,,,,,,,,,,,
 1,-,stapling enabled (but other methods succeed), -section,,,,,,,,,, -stapling,,
 -,1,only stapling without TLS, -section,,,,,,,,,, -stapling,,
-0,TBD,only stapling with TLS (but SimpleLra does not staple), -section,, -crls,"", -cdps,"", -ocsp,"",,, -stapling,, -server,_SERVER_HOST:9443,-tls_used,
+0,TBD,only stapling with TLS (but SimpleLra does not staple), -section,, -crls,"", -cdps,"", -ocsp,"",,, -stapling,, -server,_SERVER_HOST:9085,-tls_used,
 0,0,stapling with parameter, -section,,,,,,,,,,,,,,,, -stapling,asdf,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,
 0,-,wrong CRLs only, -section,, -crls,"../../../../../creds/crls/InstaDemoCA.crl", -cdps,"", -ocsp,"",,,,,,,,,,,,,,,
