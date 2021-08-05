@@ -77,7 +77,7 @@ BIG TBD Keyfile does not match,TBD Keyfile does not match,tls big .pem file conv
 0,-,expired tls_cert, -section,, -server,_SERVER_HOST:_SERVER_TLS,,,,,BLANK,,BLANK,,-tls_used,, -tls_cert,EJBCACMPSignerTLS_expired.p12, -tls_key,EJBCACMPSignerTLS_expired.p12, -tls_keypass,pass:12345,BLANK,,BLANK,
 1,-,TLS keypass from file, -section,, -server,_SERVER_HOST:_SERVER_TLS,,,,,BLANK,,BLANK,,-tls_used,, -tls_cert,EJBCACMPSignerTLS.p12, -tls_key,EJBCACMPSignerTLS.p12, -tls_keypass,file:12345.txt,BLANK,,BLANK,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,
-1,-,tls host explicit host, -section,, -server,_SERVER_HOST:_SERVER_TLS,,,,,BLANK,,BLANK,,-tls_used,, -tls_cert,EJBCACMPSignerTLS.p12, -tls_key,EJBCACMPSignerTLS.p12, -tls_keypass,pass:12345, -tls_trusted,EJBCAInfrastructureRootCAv10.crt, -tls_host,_SERVER_HOST
+1,-,tls host explicit host, -section,, -server,_SERVER_HOST:_SERVER_TLS,,,,,BLANK,,BLANK,,-tls_used,, -tls_cert,EJBCACMPSignerTLS.p12, -tls_key,EJBCACMPSignerTLS.p12, -tls_keypass,pass:12345, -tls_trusted,EJBCAInfrastructureRootCAv10.crt, -tls_host,_SERVER_HOST,-no_check_time
 1,-,tls_trusted and no tls_host, -section,, -server,_SERVER_HOST:_SERVER_TLS,,,,,BLANK,,BLANK,,-tls_used,, -tls_cert,EJBCACMPSignerTLS.p12, -tls_key,EJBCACMPSignerTLS.p12, -tls_keypass,pass:12345, -tls_trusted,EJBCAInfrastructureRootCAv10.crt,BLANK,-no_check_time
 BIG TBD 1,BIG TBD 1,tls_trusted big cert file, -section,, -server,_SERVER_HOST:_SERVER_TLS,,,,,BLANK,,BLANK,,-tls_used,, -tls_cert,EJBCACMPSignerTLS.p12, -tls_key,EJBCACMPSignerTLS.p12, -tls_keypass,pass:12345, -tls_trusted,big_EJBCAInfrastructureRootCAv10.crt,BLANK,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,
