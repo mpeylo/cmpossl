@@ -333,9 +333,8 @@ OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
     if (refcert != NULL && !ctx->SubjectAltName_nodefault)
         default_sans = X509V3_get_d2i(X509_get0_extensions(refcert),
                                       NID_subject_alt_name, NULL, NULL);
-    if (ctx->p10CSR != NULL
-            && (exts = X509_REQ_get_extensions(ctx->p10CSR)) == NULL)
-        goto err;
+    if (ctx->p10CSR != NULL)
+        exts = X509_REQ_get_extensions(ctx->p10CSR);
     if (ctx->reqExtensions != NULL /* augment/override existing ones */
             && !add_extensions(&exts, ctx->reqExtensions))
         goto err;
