@@ -90,7 +90,7 @@ ignore_keyusage = 1
 crls = "../../../../../creds/crls/InstaDemoCA.crl"
 column = 1
 sleep = 4
-# 3 is not sufficient for enrollment tests: sometimes leads to HTTP code 503 (Service Unavailable)
+# 3 is not sufficient: sometimes leads to HTTP code 503 (Service Unavailable)
 
 [Simple] # this is a Siemens-only test configuration
 #no_check_time = 1  # not yet needed here; # is not supported by OpenSSL 1.0.2
@@ -103,7 +103,7 @@ server = $server_host:$server_port
 tls_cert = EJBCACMPSignerTLS.p12
 tls_key = $tls_cert
 tls_keypass = pass:12345
-tls_trusted = EJBCAInfrastructureRootCAv10.crt
+tls_trusted = tls_trusted.pem # EJBCAInfrastructureRootCAv10.crt,localhost.crt
 server_path = cmp/PlaygroundECC/
 path = $server_path
 ca_dn = ${ENV::EJBCA_CMP_RECIPIENT}
