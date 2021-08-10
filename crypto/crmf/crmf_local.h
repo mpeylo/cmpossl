@@ -64,8 +64,8 @@ typedef struct ossl_crmf_encryptedkey_st {
     int type;
     union {
         OSSL_CRMF_ENCRYPTEDVALUE *encryptedValue;
-        CMS_ContentInfo *envelopedData;
-        /* When supported, CMS_ContentInfo needs to be replaced by CMS_ENVELOPEDDATA */
+        ASN1_SEQUENCE_ANY *envelopedData;
+        /* When supported, ASN1_SEQUENCE_ANY needs to be replaced by CMS_ENVELOPEDDATA */
     } value;
 } OSSL_CRMF_ENCRYPTEDKEY;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_ENCRYPTEDKEY)
@@ -207,8 +207,8 @@ typedef struct ossl_crmf_popoprivkey_st {
         ASN1_INTEGER *subsequentMessage; /* 1 */
         ASN1_BIT_STRING *dhMAC; /* 2 */ /* Deprecated */
         OSSL_CRMF_PKMACVALUE *agreeMAC; /* 3 */
-        CMS_ContentInfo *encryptedKey; /* 4 */
-        /* When supported, CMS_ContentInfo needs to be replaced by CMS_ENVELOPEDDATA */
+        ASN1_SEQUENCE_ANY *encryptedKey; /* 4 */
+        /* When supported, ASN1_SEQUENCE_ANY needs to be replaced by CMS_ENVELOPEDDATA */
     } value;
 } OSSL_CRMF_POPOPRIVKEY;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_POPOPRIVKEY)
