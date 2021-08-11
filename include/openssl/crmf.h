@@ -217,6 +217,14 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
                                 const X509_NAME *subject,
                                 const X509_NAME *issuer,
                                 const ASN1_INTEGER *serial);
+
+EEVP_PKEY
+*OSSL_CRMF_ENCRYPTEDKEY_get1_privateKey(OSSL_CRMF_ENCRYPTEDKEY* encrytedKey,
+                                        EVP_PKEY *ownPk, X509 *ownCert,
+                                        X509_STORE *trustedCerts,
+                                        STACK_OF(X509) *untrustedCerts,
+                                        ASN1_OCTET_STRING *secret);
+
 X509
 *OSSL_CRMF_ENCRYPTEDKEY_get1_encCert(const OSSL_CRMF_ENCRYPTEDKEY *ecert,
                                        OSSL_LIB_CTX *libctx, const char *propq,

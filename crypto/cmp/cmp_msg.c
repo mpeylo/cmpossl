@@ -1036,30 +1036,43 @@ X509 *ossl_cmp_certresponse_get1_cert(const OSSL_CMP_CERTRESPONSE *crep,
 {
     OSSL_CMP_CERTORENCCERT *coec;
     X509 *crt = NULL;
+    OSSL_CRMF_ENCRYPTEDKEY *encryptedKey;
+    EVP_PKEY *repPkey;
 
     if (!ossl_assert(crep != NULL && ctx != NULL))
         return NULL;
 
-    if (crep->certifiedKeyPair
-            && (coec = crep->certifiedKeyPair->certOrEncCert) != NULL) {
-        switch (coec->type) {
-        case OSSL_CMP_CERTORENCCERT_CERTIFICATE:
-            crt = X509_dup(coec->value.certificate);
-            break;
-        case OSSL_CMP_CERTORENCCERT_ENCRYPTEDCERT:
-            /* cert encrypted for indirect PoP; RFC 4210, 5.2.8.2 */
-            if (pkey == NULL) {
-                ERR_raise(ERR_LIB_CMP, CMP_R_MISSING_PRIVATE_KEY);
-                return NULL;
-            }
-            crt =
-                OSSL_CRMF_ENCRYPTEDKEY_get1_encCert(coec->value.encryptedCert,
+    if (crep->certifiedKeyPair != NULL) {
+        if ((encryptedKey = crep->certifiedKeyPair->privateKey) != NULL) {
+             /* found encrypted private key, try to extract */
+             repPkey = OSSL_CRMF_ENCRYPTEDKEY_get1_privateKey(encryptedKey,
+                          ctx->pkey, ctx->cert, ctx->trusted, ctx->untrusted,
+                          ctx->secretValue);
+             if (repPkey != NULL) {
+                 pkey = repPkey;
+                 OSSL_CMP_CTX_set0_newPkey((OSSL_CMP_CTX *)ctx, 1, pkey);
+             }
+        }
+        if ((coec = crep->certifiedKeyPair->certOrEncCert) != NULL) {
+            switch (coec->type) {
+            case OSSL_CMP_CERTORENCCERT_CERTIFICATE:
+                crt = X509_dup(coec->value.certificate);
+                break;
+            case OSSL_CMP_CERTORENCCERT_ENCRYPTEDCERT:
+                /* cert encrypted for indirect PoP; RFC 4210, 5.2.8.2 */
+                if (pkey == NULL) {
+                    ERR_raise(ERR_LIB_CMP, CMP_R_MISSING_PRIVATE_KEY);
+                    return NULL;
+                }
+                crt =
+                    OSSL_CRMF_ENCRYPTEDKEY_get1_encCert(coec->value.encryptedCert,
                                                       ctx->libctx, ctx->propq,
                                                       pkey);
-            break;
-        default:
-            ERR_raise(ERR_LIB_CMP, CMP_R_UNKNOWN_CERT_TYPE);
-            return NULL;
+                break;
+            default:
+                ERR_raise(ERR_LIB_CMP, CMP_R_UNKNOWN_CERT_TYPE);
+                return NULL;
+            }
         }
     }
     if (crt == NULL)

@@ -27,7 +27,8 @@
 # include <openssl/x509v3.h>
 # include <openssl/cms.h>
 
-DECLARE_ASN1_FUNCTIONS(CMS_EnvelopedData)
+DECLARE_ASN1_DUP_FUNCTION(CMS_EnvelopedData)
+DECLARE_ASN1_FUNCTIONS(CMS_SignedData)
 
 /*-
  * EncryptedValue ::= SEQUENCE {

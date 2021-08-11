@@ -15,9 +15,7 @@
 
 #include "crmf_local.h"
 
-// IMPLEMENT_ASN1_FUNCTIONS(CMS_EnvelopedData)
 #include "../cms/cms_asn1.c"
-
 
 /* explicit #includes not strictly needed since implied by the above: */
 #include <openssl/crmf.h>
@@ -243,3 +241,7 @@ ASN1_ITEM_TEMPLATE(OSSL_CRMF_MSGS) =
                           OSSL_CRMF_MSGS, OSSL_CRMF_MSG)
 ASN1_ITEM_TEMPLATE_END(OSSL_CRMF_MSGS)
 IMPLEMENT_ASN1_FUNCTIONS(OSSL_CRMF_MSGS)
+
+IMPLEMENT_ASN1_DUP_FUNCTION(CMS_EnvelopedData)
+IMPLEMENT_ASN1_FUNCTIONS(CMS_SignedData)
+
