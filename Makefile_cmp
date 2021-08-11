@@ -1,8 +1,9 @@
 #!/bin/make
-# optional LIBCMP_INC defines where the libcmp header files will be placed (default: "./include_cmp")
-# optional LIBCMP_DIR defines where the resulting cmp lib will be placed (default: ".")
-# both may contain absolute path or path relative to the dir containing this Makefile
-# optional OPENSSL_DIR defines absolute or relative path to OpenSSL installation
+# Optional OUT_DIR defines where the resulting cmp lib will be placed (default: ".").
+# Optional LIBCMP_INC defines where the libcmp header files will be placed (default: "OUT_DIR/include_cmp").
+# Optional OPENSSL_DIR defines where to find the OpenSSL installation (default: "/usr" or ".").
+# All these paths may be absolute or relative to the dir containing this Makefile.
+# Optional DEBUG_FLAGS may set to prepend to local CFLAGS and LDFLAGS (default see below).
 
 ifeq ($(OS),Windows_NT)
 #   EXE=.exe
@@ -16,8 +17,8 @@ else
     LIB=lib
 endif
 
-ifeq ($(LIBCMP_DIR),)
-     LIBCMP_DIR=.
+ifeq ($(OUT_DIR),)
+     OUT_DIR=.
 endif
 
 SYSTEM_INCLUDE_OPENSSL=/usr/include/openssl
@@ -56,15 +57,16 @@ ifeq ($(shell expr $(OPENSSL_VERSION) \< 1.1),1) # same as comparing == 1.0
 endif
 endif
 
-LIBCMP_INC ?= $(LIBCMP_DIR)/include_cmp
-LIBCMP_OUT=$(LIBCMP_DIR)/libcmp$(DLL)
+LIBCMP_INC ?= $(OUT_DIR)/include_cmp
+LIBCMP_OUT=$(OUT_DIR)/libcmp$(DLL)
 #VERSION=.0
 
 CC ?= gcc
 ifdef NDEBUG
-    override DEBUG_FLAGS = -DNDEBUG=1 -O2
+    DEBUG_FLAGS ?= -O2
+    override DEBUG_FLAGS += -DNDEBUG=1
 else
-    override DEBUG_FLAGS = -g -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all -O0 # not every compiler(version) supports -Og
+    DEBUG_FLAGS ?= -g -O0 -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all # not every compiler(version) supports -Og
 endif
 override CFLAGS += $(DEBUG_FLAGS) -fPIC -DDEBUG_UNUSED -DPEDANTIC -pedantic -Wall -Wextra -Wswitch -Wsign-compare -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wformat -Wtype-limits -Wundef $(OSSL_VERSION_QUIRKS)# -Werror # not needed for cmp+crmf: -Wno-long-long -Wno-missing-field-initializers
 override CFLAGS += -isystem $(OPENSSL_DIR)/include # use of -isystem is critical for selecting wanted OpenSSL version
@@ -94,7 +96,7 @@ LIBCMP_SRCS = $(patsubst %,crypto/crmf/%,$(CRMF_SRCS_)) \
 build: $(LIBCMP_OUT)
 
 $(LIBCMP_INC)/openssl:
-	@mkdir -p $(LIBCMP_DIR)
+	@mkdir -p $(OUT_DIR)
 	@mkdir -p $(LIBCMP_INC)/openssl
 $(LIBCMP_INC)/internal:
 	@mkdir -p $(LIBCMP_INC)/internal
