@@ -149,6 +149,10 @@ int OSSL_CMP_print_to_bio(BIO *bio, const char *component, const char *file,
     if (BIO_printf(bio, "%s:%s:%d:", improve_location_name(component, "CMP"),
                    file, line) < 0)
         return 0;
+#else
+    (void)component;
+    (void)file;
+    (void)line;
 #endif
     return BIO_printf(bio, OSSL_CMP_LOG_PREFIX"%s: %s\n",
                       level_string, msg) >= 0;
