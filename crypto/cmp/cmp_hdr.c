@@ -306,6 +306,7 @@ int ossl_cmp_hdr_init(OSSL_CMP_CTX *ctx, OSSL_CMP_PKIHEADER *hdr)
      */
     sender = ctx->cert != NULL ? X509_get_subject_name(ctx->cert) :
         ctx->oldCert != NULL ? X509_get_subject_name(ctx->oldCert) :
+        ctx->p10CSR != NULL ? X509_REQ_get_subject_name(ctx->p10CSR) :
         ctx->subjectName;
     if (!ossl_cmp_hdr_set1_sender(hdr, sender))
         return 0;
