@@ -17,6 +17,10 @@
 # include <openssl/crmf.h>
 # include <openssl/err.h>
 
+# include <openssl/cms.h> /* TODO fix visibility upstream */
+# include "../cms/cms_lcl.h" /* TODO fix visibility upstream */
+DECLARE_ASN1_FUNCTIONS(CMS_EnvelopedData)
+
 /* explicit #includes not strictly needed since implied by the above: */
 # include <openssl/types.h>
 # include <openssl/safestack.h>
@@ -188,8 +192,7 @@ typedef struct ossl_crmf_popoprivkey_st {
         ASN1_INTEGER *subsequentMessage; /* 1 */
         ASN1_BIT_STRING *dhMAC; /* 2 */ /* Deprecated */
         OSSL_CRMF_PKMACVALUE *agreeMAC; /* 3 */
-        ASN1_NULL *encryptedKey; /* 4 */
-        /* When supported, ASN1_NULL needs to be replaced by CMS_ENVELOPEDDATA */
+        CMS_EnvelopedData *encryptedKey; /* 4 */
     } value;
 } OSSL_CRMF_POPOPRIVKEY;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_POPOPRIVKEY)

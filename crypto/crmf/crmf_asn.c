@@ -14,6 +14,12 @@
 #include <openssl/asn1t.h>
 
 #include "crmf_local.h"
+/* TODO fix visibility of CMS features upstream */
+IMPLEMENT_ASN1_FUNCTIONS(CMS_EnvelopedData)
+_Pragma("GCC diagnostic push")
+_Pragma("GCC diagnostic ignored \"-Wunused-parameter\"")
+#include "../cms/cms_asn1.c"
+_Pragma("GCC diagnostic pop")
 
 /* explicit #includes not strictly needed since implied by the above: */
 #include <openssl/crmf.h>
@@ -88,8 +94,7 @@ ASN1_CHOICE(OSSL_CRMF_POPOPRIVKEY) = {
     ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.subsequentMessage, ASN1_INTEGER, 1),
     ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.dhMAC, ASN1_BIT_STRING, 2),
     ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.agreeMAC, OSSL_CRMF_PKMACVALUE, 3),
-    ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.encryptedKey, ASN1_NULL, 4),
-    /* When supported, ASN1_NULL needs to be replaced by CMS_ENVELOPEDDATA */
+    ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.encryptedKey, CMS_EnvelopedData, 4),
 } ASN1_CHOICE_END(OSSL_CRMF_POPOPRIVKEY)
 IMPLEMENT_ASN1_FUNCTIONS(OSSL_CRMF_POPOPRIVKEY)
 
