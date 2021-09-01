@@ -576,6 +576,23 @@ const ASN1_INTEGER *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID *c
     return cid != NULL ? cid->serialNumber : NULL;
 }
 
+/* in ../../include/openssl/ossl_typ.h: typedef struct X509_pubkey_st X509_PUBKEY;*/
+/* copied from ../x509/x_pubkey.c: */
+struct X509_pubkey_st {
+    X509_ALGOR *algor;
+    ASN1_BIT_STRING *public_key;
+    EVP_PKEY *pkey;
+};
+static void X509_PUBKEY_set0_public_key(X509_PUBKEY *pub, unsigned char *penc, int penclen)
+{
+    OPENSSL_free(pub->public_key->data);
+    pub->public_key->data = penc;
+    pub->public_key->length = penclen;
+    /* Set number of unused bits to zero */
+    pub->public_key->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
+    pub->public_key->flags |= ASN1_STRING_FLAG_BITS_LEFT;
+}
+
 /*-
  * fill in certificate template.
  * Any value argument that is NULL will leave the respective field unchanged.
@@ -601,6 +618,11 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
     }
     if (pubkey != NULL && !X509_PUBKEY_set(&tmpl->publicKey, pubkey))
         return 0;
+    if (pubkey != NULL) {
+        /* set public_key bit string to NULL */
+        /* TODO AK: do this only if central key gen is requested */
+        X509_PUBKEY_set0_public_key(tmpl->publicKey, NULL, 0);
+    }
     return 1;
 }
 
