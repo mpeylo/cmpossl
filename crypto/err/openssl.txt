@@ -2109,6 +2109,7 @@ CMP_R_ERROR_TRANSFERRING_IN:141:error transferring in
 CMP_R_ERROR_TRANSFERRING_OUT:142:error transferring out
 CMP_R_ERROR_VALIDATING_PROTECTION:143:error validating protection
 CMP_R_FAILED_BUILDING_OWN_CHAIN:197:failed building own chain
+CMP_R_FAILED_EXTRACTING_CENTRAL_GEN_KEY:190:failed extracting central gen key
 CMP_R_FAILED_EXTRACTING_PUBKEY:144:failed extracting pubkey
 CMP_R_FAILED_TO_RECEIVE_PKIMESSAGE:145:failed to receive pkimessage
 CMP_R_FAILED_TO_SEND_REQUEST:146:failed to send request
@@ -2120,6 +2121,7 @@ CMP_R_INVALID_CONTEXT:150:invalid context
 CMP_R_INVALID_PARAMETERS:151:invalid parameters
 CMP_R_IP_NOT_RECEIVED:152:ip not received
 CMP_R_KUP_NOT_RECEIVED:153:kup not received
+CMP_R_MISSING_CENTRAL_GEN_KEY:191:missing central gen key
 CMP_R_MISSING_KEY_INPUT_FOR_CREATING_PROTECTION:154:\
 	missing key input for creating protection
 CMP_R_MISSING_KEY_USAGE_DIGITALSIGNATURE:155:missing key usage digitalsignature
@@ -2149,6 +2151,7 @@ CMP_R_SENDER_GENERALNAME_TYPE_NOT_SUPPORTED:175:\
 CMP_R_TLS_ERROR:176:tls error
 CMP_R_TOTAL_TIMEOUT:177:total timeout
 CMP_R_TRANSACTIONID_UNMATCHED:178:transactionid unmatched
+CMP_R_UNEXPECTED_CENTRAL_GEN_KEY:192:unexpected central gen key
 CMP_R_UNEXPECTED_PKIBODY:179:unexpected pkibody
 CMP_R_UNEXPECTED_PKISTATUS:180:unexpected pkistatus
 CMP_R_UNEXPECTED_PVNO:193:unexpected pvno
