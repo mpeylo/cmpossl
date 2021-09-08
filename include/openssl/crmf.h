@@ -213,7 +213,7 @@ const X509_NAME
 const ASN1_INTEGER
 *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID *cid);
 int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
-                                EVP_PKEY *pubkey,
+                                EVP_PKEY *pubkey, int central_keygen,
                                 const X509_NAME *subject,
                                 const X509_NAME *issuer,
                                 const ASN1_INTEGER *serial);

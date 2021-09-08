@@ -598,7 +598,7 @@ static void X509_PUBKEY_set0_public_key(X509_PUBKEY *pub, unsigned char *penc, i
  * Any value argument that is NULL will leave the respective field unchanged.
  */
 int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
-                                EVP_PKEY *pubkey,
+                                EVP_PKEY *pubkey, int central_keygen,
                                 const X509_NAME *subject,
                                 const X509_NAME *issuer,
                                 const ASN1_INTEGER *serial)
@@ -618,9 +618,8 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
     }
     if (pubkey != NULL && !X509_PUBKEY_set(&tmpl->publicKey, pubkey))
         return 0;
-    if (pubkey != NULL) {
+    if (pubkey != NULL && central_keygen) {
         /* set public_key bit string to NULL */
-        /* TODO AK: do this only if central key gen is requested */
         X509_PUBKEY_set0_public_key(tmpl->publicKey, NULL, 0);
     }
     return 1;
