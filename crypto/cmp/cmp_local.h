@@ -903,8 +903,8 @@ ossl_cmp_pollrepcontent_get0_pollrep(const OSSL_CMP_POLLREPCONTENT *prc,
 OSSL_CMP_CERTRESPONSE *
 ossl_cmp_certrepmessage_get0_certresponse(const OSSL_CMP_CERTREPMESSAGE *crm,
                                           int rid);
-X509 *ossl_cmp_certresponse_get1_cert(const OSSL_CMP_CERTRESPONSE *crep,
-                                      const OSSL_CMP_CTX *ctx, EVP_PKEY *pkey);
+X509 *ossl_cmp_certresponse_get1_cert_key(const OSSL_CMP_CERTRESPONSE *crep,
+                                          const OSSL_CMP_CTX *ctx, EVP_PKEY *pkey);
 OSSL_CMP_MSG *ossl_cmp_msg_loads(const char *file);
 
 /* from cmp_protect.c */
