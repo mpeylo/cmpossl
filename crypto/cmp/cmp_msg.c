@@ -278,6 +278,8 @@ static const X509_NAME *determine_subj(OSSL_CMP_CTX *ctx,
 OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
 {
     OSSL_CRMF_MSG *crm = NULL;
+    int central_keygen = OSSL_CMP_CTX_get_option(ctx, OSSL_CMP_OPT_POPO_METHOD)
+        == OSSL_CRMF_POPO_NONE;
     X509 *refcert = ctx->oldCert;
     EVP_PKEY *rkey = OSSL_CMP_CTX_get0_newPkey(ctx, 0);
     STACK_OF(GENERAL_NAME) *default_sans = NULL;
@@ -314,6 +316,7 @@ OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
              * it could be NULL if centralized key creation was supported
              */
             || !OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_MSG_get0_tmpl(crm), rkey,
+                                            central_keygen,
                                             subject, issuer, NULL /* serial */))
         goto err;
     if (ctx->days != 0) {
@@ -539,12 +542,12 @@ OSSL_CMP_MSG *ossl_cmp_rr_new(OSSL_CMP_CTX *ctx)
     /* Fill the template from the contents of the certificate to be revoked */
     ret = ctx->oldCert != NULL
     ? OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
-                                  NULL /* pubkey would be redundant */,
+                                  NULL /* pubkey would be redundant */, 0,
                                   NULL /* subject would be redundant */,
                                   X509_get_issuer_name(ctx->oldCert),
                                   X509_get0_serialNumber(ctx->oldCert))
     : OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
-                                  X509_REQ_get0_pubkey(ctx->p10CSR),
+                                  X509_REQ_get0_pubkey(ctx->p10CSR), 0,
                                   X509_REQ_get_subject_name(ctx->p10CSR),
                                   NULL, NULL);
     if (!ret)
