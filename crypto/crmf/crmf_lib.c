@@ -632,95 +632,96 @@ static inline CMS_SignedData *d2i_CMS_SignedData_bio(BIO *bp, CMS_SignedData **s
     return ASN1_item_d2i_bio(ASN1_ITEM_rptr(CMS_SignedData), bp, sd);
 }
 
-/* extract private key from envelopedData in encrytedKey */
-EVP_PKEY
-*OSSL_CRMF_ENCRYPTEDKEY_get1_privateKey(OSSL_CRMF_ENCRYPTEDKEY* encrytedKey,
-                                        EVP_PKEY *ownPk, X509 *ownCert,
-                                        X509_STORE *trustedCerts,
-                                        STACK_OF(X509) *untrustedCerts,
-                                        ASN1_OCTET_STRING *secret) {
+/* extract private key from envelopedData in encryptedKey */
+EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
+                                          X509_STORE *ts,
+                                          STACK_OF(X509) *untrusted,
+                                          EVP_PKEY *pkey, X509 *cert,
+                                          ASN1_OCTET_STRING *secret) {
 
     EVP_PKEY *ret = NULL;
-    CMS_ContentInfo *envelopeCms = NULL;
-    BIO *rawSignedDataBio = NULL;
-    CMS_SignedData *signedData = NULL;
-    CMS_ContentInfo *signedCms = NULL;
-    BIO *rawPrivateKeyBio = NULL;
+    CMS_ContentInfo *ci = NULL;
+    BIO *signed_data_bio = NULL;
+    CMS_SignedData *signed_data = NULL;
+    CMS_ContentInfo *signed_ci = NULL;
+    BIO *pkey_bio = NULL;
 
 
-    if (encrytedKey == NULL) {
+    if (encryptedKey == NULL) {
          ERR_raise(ERR_LIB_CRMF, CRMF_R_NULL_ARGUMENT);
          goto end;
     }
-    if (encrytedKey->type != 1 || encrytedKey->value.envelopedData == NULL) {
+    if ((pkey == NULL) != (cert == NULL)) {
+         ERR_raise(ERR_LIB_CRMF, ERR_R_PASSED_INVALID_ARGUMENT);
+         goto end;
+    }
+    if (encryptedKey->type != 1 /* TODO replace magic number */) {
         /* TODO: use better CRMF_R_ERROR_* code */
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
+    if (encryptedKey->value.envelopedData == NULL) {
+        /* TODO: use better CRMF_R_ERROR_* code */
+        ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
+        goto end;
+    }
+
     /* unpack EnvelopedData */
-    if ((envelopeCms = CMS_ContentInfo_new()) == NULL ||
-         (rawSignedDataBio = BIO_new(BIO_s_mem())) == NULL) {
+    if ((ci = CMS_ContentInfo_new()) == NULL
+        || (signed_data_bio = BIO_new(BIO_s_mem())) == NULL) {
          CMSerr(ERR_LIB_CRMF, ERR_R_MALLOC_FAILURE);
          goto end;
     }
-    if ((envelopeCms->contentType = OBJ_nid2obj(NID_pkcs7_enveloped)) == NULL ||
-        (envelopeCms->d.envelopedData = CMS_EnvelopedData_dup(encrytedKey->value.envelopedData)) == NULL) {
+    if ((ci->contentType = OBJ_nid2obj(NID_pkcs7_enveloped)) == NULL
+        || (ci->d.envelopedData =
+            CMS_EnvelopedData_dup(encryptedKey->value.envelopedData)) == NULL) {
         CMSerr(ERR_LIB_CRMF, ERR_R_MALLOC_FAILURE);
         goto end;
     }
-    if (secret !=NULL) {
-        if (CMS_decrypt_set1_password(envelopeCms,
-                                      (unsigned char *)ASN1_STRING_get0_data(secret),
-                                      ASN1_STRING_length(secret)) != 1) {
-             /* TODO: use better CRMF_R_ERROR_* code*/
-             ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
-             goto end;
-        }
-    }
-    if (ownPk != NULL && ownCert != NULL) {
-        if (CMS_decrypt_set1_pkey(envelopeCms, ownPk, ownCert) != 1) {
-            /* TODO: use better CRMF_R_ERROR_* code*/
-            ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
-            goto end;
-        }
-    }
-    if (CMS_decrypt(envelopeCms, NULL, NULL, NULL, rawSignedDataBio, 0) != 1) {
+    if (secret != NULL
+            && CMS_decrypt_set1_password(ci, (unsigned char *)
+                                         ASN1_STRING_get0_data(secret),
+                                         ASN1_STRING_length(secret)) != 1)
+        goto end;
+    if (pkey != NULL && cert != NULL
+            && CMS_decrypt_set1_pkey(ci, pkey, cert) != 1)
+        goto end;
+    if (CMS_decrypt(ci, NULL, NULL, NULL, signed_data_bio, 0) != 1) {
         /* TODO: use better CRMF_R_ERROR_* code*/
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
+
     /* unpack SignedData */
-    if ((signedData = d2i_CMS_SignedData_bio(rawSignedDataBio, NULL)) == NULL) {
+    if ((signed_data = d2i_CMS_SignedData_bio(signed_data_bio, NULL)) == NULL) {
         /* TODO: use better CRMF_R_ERROR_* code*/
         CMSerr(ERR_LIB_CRMF, ERR_R_MALLOC_FAILURE);
-         goto end;
+        goto end;
     }
-    if ((signedCms = CMS_ContentInfo_new()) == NULL ||
-         (rawPrivateKeyBio = BIO_new(BIO_s_mem())) == NULL) {
+    if ((signed_ci = CMS_ContentInfo_new()) == NULL
+        || (pkey_bio = BIO_new(BIO_s_mem())) == NULL) {
          CMSerr(ERR_LIB_CRMF, ERR_R_MALLOC_FAILURE);
          goto end;
     }
-    if ((signedCms->contentType = OBJ_nid2obj(NID_pkcs7_signed)) == NULL) {
-        CMSerr(ERR_LIB_CRMF, ERR_R_MALLOC_FAILURE);
+    if ((signed_ci->contentType = OBJ_nid2obj(NID_pkcs7_signed)) == NULL)
         goto end;
-    };
-    signedCms->d.signedData = signedData;
-    signedData = NULL;
+    signed_ci->d.signedData = signed_data;
+    signed_data = NULL;
     /*
      * TODO:
-     * from manpage of CMS_verify:
-     * "Each signing certificate is chain verified using the *smimesign* purpose
-     * and the supplied trusted certificate store."
-     * so CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN is used to come around the missing purpose
+     * Find better solution than adding CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN
+     * which is used as workaround for missing CMS purpose.
+     * From manpage of CMS_verify: "Each signing certificate is chain verified
+     * using the *smimesign* purpose and the supplied trusted certificate store"
      */
-    if (CMS_verify(signedCms, untrustedCerts, trustedCerts, NULL, rawPrivateKeyBio,
-            CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN) != 1) {
+    if (CMS_verify(signed_ci, untrusted, ts, NULL, pkey_bio,
+                   CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN) != 1) {
         /* TODO: use better CRMF_R_ERROR_* code*/
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
     /* unpack AsymmetricKeyPackage */
-    ret = d2i_PrivateKey_bio(rawPrivateKeyBio, NULL);
+    ret = d2i_PrivateKey_bio(pkey_bio, NULL);
     if (ret == NULL) {
         /* TODO: use better CRMF_R_ERROR_* code*/
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
@@ -728,11 +729,11 @@ EVP_PKEY
     }
 
   end:
-    CMS_ContentInfo_free(envelopeCms);
-    BIO_free(rawSignedDataBio);
-    CMS_SignedData_free(signedData);
-    CMS_ContentInfo_free(signedCms);
-    BIO_free(rawPrivateKeyBio);
+    CMS_ContentInfo_free(ci);
+    BIO_free(signed_data_bio);
+    CMS_SignedData_free(signed_data);
+    CMS_ContentInfo_free(signed_ci);
+    BIO_free(pkey_bio);
 
     return ret;
 }

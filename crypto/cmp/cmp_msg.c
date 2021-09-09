@@ -1061,10 +1061,10 @@ X509 *ossl_cmp_certresponse_get1_cert_key(const OSSL_CMP_CERTRESPONSE *crep,
             return NULL;
         }
         /* found encrypted private key, try to extract */
-        pkey = OSSL_CRMF_ENCRYPTEDKEY_get1_privateKey(encr_key, ctx->pkey,
-                                                      ctx->cert, ctx->trusted,
-                                                      ctx->untrusted,
-                                                      ctx->secretValue);
+        pkey = OSSL_CRMF_ENCRYPTEDKEY_get1_key(encr_key, ctx->trusted,
+                                               ctx->untrusted,
+                                               ctx->pkey, ctx->cert,
+                                               ctx->secretValue);
         if (pkey == NULL) {
             ERR_raise(ERR_LIB_CMP, CMP_R_FAILED_EXTRACTING_CENTRAL_GEN_KEY);
             return NULL;
