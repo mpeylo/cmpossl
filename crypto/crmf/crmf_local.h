@@ -17,8 +17,12 @@
 # include <openssl/crmf.h>
 # include <openssl/err.h>
 
-# include <openssl/cms.h> /* TODO fix visibility upstream */
-# include "../cms/cms_lcl.h" /* TODO fix visibility upstream */
+# include <openssl/cms.h>
+
+# include "../cms/cms_lcl.h" /* TODO remove when visibility fixed upstream */
+/* TODO move to cms.h */
+DECLARE_ASN1_DUP_FUNCTION(CMS_EnvelopedData)
+DECLARE_ASN1_FUNCTIONS(CMS_SignedData)
 
 /* explicit #includes not strictly needed since implied by the above: */
 # include <openssl/types.h>
@@ -26,9 +30,6 @@
 # include <openssl/x509.h>
 # include <openssl/x509v3.h>
 # include <openssl/cms.h>
-
-DECLARE_ASN1_DUP_FUNCTION(CMS_EnvelopedData)
-DECLARE_ASN1_FUNCTIONS(CMS_SignedData)
 
 /*-
  * EncryptedValue ::= SEQUENCE {
