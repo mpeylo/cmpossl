@@ -67,6 +67,9 @@ struct ossl_crmf_encryptedvalue_st {
  *       -- The encrypted private key MUST be placed in the envelopedData
  *       -- encryptedContentInfo encryptedContent OCTET STRING.
  */
+
+#define ENVELOPEDDATA_TYPE 1
+
 typedef struct ossl_crmf_encryptedkey_st {
     int type;
     union {

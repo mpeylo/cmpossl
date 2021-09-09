@@ -655,13 +655,15 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
          ERR_raise(ERR_LIB_CRMF, ERR_R_PASSED_INVALID_ARGUMENT);
          goto end;
     }
-    if (encryptedKey->type != 1 /* TODO replace magic number */) {
+    if (encryptedKey->type != ENVELOPEDDATA_TYPE) {
         /* TODO: use better CRMF_R_ERROR_* code */
+        /* "unsupported type of EncryptedKey" */
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
     if (encryptedKey->value.envelopedData == NULL) {
         /* TODO: use better CRMF_R_ERROR_* code */
+        /* "EncryptedKey missing" */
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
@@ -688,6 +690,7 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
         goto end;
     if (CMS_decrypt(ci, NULL, NULL, NULL, signed_data_bio, 0) != 1) {
         /* TODO: use better CRMF_R_ERROR_* code*/
+        /* "unable to decrypt EncryptedKey" */
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
@@ -695,6 +698,7 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
     /* unpack SignedData */
     if ((signed_data = d2i_CMS_SignedData_bio(signed_data_bio, NULL)) == NULL) {
         /* TODO: use better CRMF_R_ERROR_* code*/
+        /* "unable to unpack SignedData" */
         CMSerr(ERR_LIB_CRMF, ERR_R_MALLOC_FAILURE);
         goto end;
     }
@@ -717,6 +721,7 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
     if (CMS_verify(signed_ci, untrusted, ts, NULL, pkey_bio,
                    CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN) != 1) {
         /* TODO: use better CRMF_R_ERROR_* code*/
+        /* "unable to verify signature of EncryptedKey" */
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
@@ -724,6 +729,7 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
     ret = d2i_PrivateKey_bio(pkey_bio, NULL);
     if (ret == NULL) {
         /* TODO: use better CRMF_R_ERROR_* code*/
+        /* "unable to unpack AsymmetricKeyPackage" */
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
