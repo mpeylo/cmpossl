@@ -576,13 +576,14 @@ const ASN1_INTEGER *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID *c
     return cid != NULL ? cid->serialNumber : NULL;
 }
 
-/* in ../../include/openssl/ossl_typ.h: typedef struct X509_pubkey_st X509_PUBKEY;*/
+/* TODO remove when X509_PUBKEY_set0_public_key() has been added to X509 API */
 /* copied from ../x509/x_pubkey.c: */
 struct X509_pubkey_st {
     X509_ALGOR *algor;
     ASN1_BIT_STRING *public_key;
     EVP_PKEY *pkey;
 };
+/* TODO move X509_PUBKEY_set0_public_key() or the like to ../x509/x_pubkey.c */
 static void X509_PUBKEY_set0_public_key(X509_PUBKEY *pub, unsigned char *penc, int penclen)
 {
     OPENSSL_free(pub->public_key->data);
@@ -631,9 +632,7 @@ static inline CMS_SignedData *d2i_CMS_SignedData_bio(BIO *bp, CMS_SignedData **s
     return ASN1_item_d2i_bio(ASN1_ITEM_rptr(CMS_SignedData), bp, sd);
 }
 
-/*
- * extract private key from envelopedData in encrytedKey
- */
+/* extract private key from envelopedData in encrytedKey */
 EVP_PKEY
 *OSSL_CRMF_ENCRYPTEDKEY_get1_privateKey(OSSL_CRMF_ENCRYPTEDKEY* encrytedKey,
                                         EVP_PKEY *ownPk, X509 *ownCert,

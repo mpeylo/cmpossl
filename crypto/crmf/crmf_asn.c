@@ -15,7 +15,11 @@
 
 #include "crmf_local.h"
 
+/* TODO remove when CMS API has been extended by below CMS_EnvelopedData fns */
 #include "../cms/cms_asn1.c"
+/* TODO move to ../cms/cms_asn.c */
+IMPLEMENT_ASN1_DUP_FUNCTION(CMS_EnvelopedData)
+IMPLEMENT_ASN1_FUNCTIONS(CMS_SignedData)
 
 /* explicit #includes not strictly needed since implied by the above: */
 #include <openssl/crmf.h>
@@ -241,7 +245,3 @@ ASN1_ITEM_TEMPLATE(OSSL_CRMF_MSGS) =
                           OSSL_CRMF_MSGS, OSSL_CRMF_MSG)
 ASN1_ITEM_TEMPLATE_END(OSSL_CRMF_MSGS)
 IMPLEMENT_ASN1_FUNCTIONS(OSSL_CRMF_MSGS)
-
-IMPLEMENT_ASN1_DUP_FUNCTION(CMS_EnvelopedData)
-IMPLEMENT_ASN1_FUNCTIONS(CMS_SignedData)
-
