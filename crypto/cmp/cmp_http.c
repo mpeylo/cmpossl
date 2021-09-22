@@ -66,14 +66,26 @@ OSSL_CMP_MSG *OSSL_CMP_MSG_http_perform(OSSL_CMP_CTX *ctx,
     if ((req_mem = ASN1_item_i2d_mem_bio(it, (const ASN1_VALUE *)req)) == NULL)
         goto err;
 
+    bio = OSSL_CMP_CTX_get_transfer_cb_arg(ctx);
     if (ctx->serverPort != 0)
         BIO_snprintf(server_port, sizeof(server_port), "%d", ctx->serverPort);
     tls_used = OSSL_CMP_CTX_get_http_cb_arg(ctx) != NULL;
-    if (ctx->http_ctx == NULL)
-        ossl_cmp_log3(DEBUG, ctx, "connecting to CMP server %s:%s%s",
-                      ctx->server, server_port, tls_used ? " using TLS" : "");
-    bio = OSSL_CMP_CTX_get_transfer_cb_arg(ctx);
+    if (ctx->http_ctx == NULL) {
+        const char *path = ctx->serverPath;
 
+        if (path == NULL)
+            path = "";
+        if (*path == '/')
+            path++;
+        if (bio == NULL)
+            ossl_cmp_log4(DEBUG, ctx, "connecting to CMP server %s:%s%s; will use HTTP path \"/%s\"",
+                          ctx->server, server_port,
+                          tls_used ? " using TLS" : "", path);
+        else
+            ossl_cmp_log1(DEBUG, ctx,
+                          "contacting CMP server via existing connection; will use HTTP path \"/%s\"",
+                          path);
+    }
     rsp = OSSL_HTTP_transfer(&ctx->http_ctx, ctx->server, server_port,
                              ctx->serverPath, tls_used,
                              ctx->proxy, ctx->no_proxy,
@@ -92,9 +104,11 @@ OSSL_CMP_MSG *OSSL_CMP_MSG_http_perform(OSSL_CMP_CTX *ctx,
     if (ctx->http_ctx == NULL)
         ossl_cmp_debug(ctx, "disconnected from CMP server");
     /*
-     * Note that on normal successful end of the transaction the connection
-     * is not closed at this level, but this will be done by the CMP client
-     * application via OSSL_CMP_CTX_free() or OSSL_CMP_CTX_reinit().
+     * Note that on normal successful end of the transaction the
+     * HTTP connection is not closed at this level if keep_alive() yields true.
+     * It should be closed by the CMP client application
+     * using OSSL_CMP_CTX_free() or OSSL_CMP_CTX_reinit().
+     * Note that any pre-existing bio (== ctx->transfer_cb_arg) is not freed.
      */
     if (res != NULL)
         ossl_cmp_debug(ctx, "finished reading response from CMP server");
