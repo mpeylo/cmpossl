@@ -14,7 +14,6 @@
 
 #include <openssl/asn1t.h>
 #include <openssl/http.h>
-#include "internal/sockets.h"
 
 #include <openssl/cmp.h>
 #include "cmp_local.h"
@@ -28,6 +27,8 @@
 #include <openssl/cmp.h>
 #include <openssl/err.h>
 
+#define DEFAULT_RETRY_AFTER 60 /* one minute */
+
 static int keep_alive(int keep_alive, int body_type, BIO *bio)
 {
     if (keep_alive != 0 && bio == NULL
@@ -38,7 +39,8 @@ static int keep_alive(int keep_alive, int body_type, BIO *bio)
             && body_type != OSSL_CMP_PKIBODY_KUR
             && body_type != OSSL_CMP_PKIBODY_POLLREQ)
         keep_alive = 0;
-    return keep_alive;
+    return keep_alive >= 2 ? OSSL_HTTP_FLAG_REQUIRE_KEEP_ALIVE :
+        keep_alive == 1 ? OSSL_HTTP_FLAG_ENABLE_KEEP_ALIVE : 0;
 }
 
 /*
@@ -50,10 +52,11 @@ OSSL_CMP_MSG *OSSL_CMP_MSG_http_perform(OSSL_CMP_CTX *ctx,
 {
     char server_port[32] = { '\0' };
     STACK_OF(CONF_VALUE) *headers = NULL;
-    const char content_type_pkix[] = "application/pkixcmp";
     int tls_used;
     const ASN1_ITEM *it = ASN1_ITEM_rptr(OSSL_CMP_MSG);
-    BIO *req_mem, *rsp, *bio;
+    const char content_type_pkix[] = "application/pkixcmp";
+    int flags = OSSL_HTTP_FLAG_ENABLE_RETRY | OSSL_HTTP_FLAG_EXPECT_ASN1;
+    BIO *rsp, *bio;
     OSSL_CMP_MSG *res = NULL;
 
     if (ctx == NULL || req == NULL) {
@@ -63,8 +66,6 @@ OSSL_CMP_MSG *OSSL_CMP_MSG_http_perform(OSSL_CMP_CTX *ctx,
 
     if (!X509V3_add_value("Pragma", "no-cache", &headers))
         return NULL;
-    if ((req_mem = ASN1_item_i2d_mem_bio(it, (const ASN1_VALUE *)req)) == NULL)
-        goto err;
 
     bio = OSSL_CMP_CTX_get_transfer_cb_arg(ctx);
     if (ctx->serverPort != 0)
@@ -86,18 +87,18 @@ OSSL_CMP_MSG *OSSL_CMP_MSG_http_perform(OSSL_CMP_CTX *ctx,
                           "contacting CMP server via existing connection; will use HTTP path \"/%s\"",
                           path);
     }
-    rsp = OSSL_HTTP_transfer(&ctx->http_ctx, ctx->server, server_port,
-                             ctx->serverPath, tls_used,
-                             ctx->proxy, ctx->no_proxy,
-                             bio, bio /* rbio */,
-                             ctx->http_cb, OSSL_CMP_CTX_get_http_cb_arg(ctx),
-                             0 /* buf_size */, headers,
-                             content_type_pkix, req_mem,
-                             content_type_pkix, 1 /* expect_asn1 */,
-                             OSSL_HTTP_DEFAULT_MAX_RESP_LEN,
-                             ctx->msg_timeout,
-                             keep_alive(ctx->keep_alive, req->body->type, bio));
-    BIO_free(req_mem);
+
+    flags |= keep_alive(ctx->keep_alive, req->body->type, bio);
+    rsp = OSSL_HTTP_transfer_ex(&ctx->http_ctx, ctx->server, server_port,
+                                ctx->serverPath, tls_used,
+                                ctx->proxy, ctx->no_proxy,
+                                bio, bio /* rbio */, ctx->http_cb,
+                                OSSL_CMP_CTX_get_http_cb_arg(ctx),
+                                0 /* buf_size */, headers,
+                                content_type_pkix, NULL, NULL, 0,
+                                (const ASN1_VALUE *)req, it, content_type_pkix,
+                                flags, OSSL_HTTP_DEFAULT_MAX_RESP_LEN,
+                                DEFAULT_RETRY_AFTER, ctx->msg_timeout);
     res = (OSSL_CMP_MSG *)ASN1_item_d2i_bio(it, rsp, NULL);
     BIO_free(rsp);
 
@@ -105,14 +106,13 @@ OSSL_CMP_MSG *OSSL_CMP_MSG_http_perform(OSSL_CMP_CTX *ctx,
         ossl_cmp_debug(ctx, "disconnected from CMP server");
     /*
      * Note that on normal successful end of the transaction the
-     * HTTP connection is not closed at this level if keep_alive() yields true.
+     * HTTP connection is not closed at this level if keep_alive() != 0.
      * It should be closed by the CMP client application
      * using OSSL_CMP_CTX_free() or OSSL_CMP_CTX_reinit().
      * Note that any pre-existing bio (== ctx->transfer_cb_arg) is not freed.
      */
     if (res != NULL)
         ossl_cmp_debug(ctx, "finished reading response from CMP server");
- err:
     sk_CONF_VALUE_pop_free(headers, X509V3_conf_free);
     return res;
 }

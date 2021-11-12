@@ -431,6 +431,8 @@ int ossl_cmp_sk_X509_add1_certs(STACK_OF(X509) *sk, STACK_OF(X509) *certs,
 int ossl_x509_add_certs_new(STACK_OF(X509) **p_sk, STACK_OF(X509) *certs,
                             int flags);
 int ossl_x509_add_cert_new(STACK_OF(X509) **p_sk, X509 *cert, int flags);
+/* from crypto/bio.h: */
+int BIO_get_line(BIO *bio, char *buf, int size);
 /* from internal/cryptlib.h: */
 int openssl_strerror_r(int errnum, char *buf, size_t buflen);
 

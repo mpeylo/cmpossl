@@ -566,18 +566,18 @@ static int BIO_socket_wait(int fd, int for_read, time_t max_time)
 /* Internal variant of the below BIO_wait() not calling BIOerr() */
 static int bio_wait(BIO *bio, time_t max_time, unsigned int nap_milliseconds)
 {
-#ifndef OPENSSL_NO_SOCK
+# ifndef OPENSSL_NO_SOCK
     int fd;
-#endif
+# endif
     long sec_diff;
 
     if (max_time == 0) /* no timeout */
         return 1;
 
-#ifndef OPENSSL_NO_SOCK
+# ifndef OPENSSL_NO_SOCK
     if (BIO_get_fd(bio, &fd) > 0 && fd < FD_SETSIZE)
         return BIO_socket_wait(fd, BIO_should_read(bio), max_time);
-#endif
+# endif
     /* fall back to polling since no sockets are available */
 
     sec_diff = (long)(max_time - time(NULL)); /* might overflow */
@@ -752,7 +752,40 @@ STACK_OF(X509) *X509_build_chain(X509 *cert, STACK_OF(X509) *certs,
     X509_STORE_CTX_free(csc);
     return result;
 }
-#endif
+
+/* from crypto/bio/bio_lib.c */
+int BIO_get_line(BIO *bio, char *buf, int size)
+{
+    int ret = 0;
+    char *ptr = buf;
+
+    if (buf == NULL) {
+        ERR_raise(ERR_LIB_BIO, ERR_R_PASSED_NULL_PARAMETER);
+        return -1;
+    }
+    if (size <= 0) {
+        ERR_raise(ERR_LIB_BIO, BIO_R_INVALID_ARGUMENT);
+        return -1;
+    }
+    *buf = '\0';
+
+    if (bio == NULL) {
+        ERR_raise(ERR_LIB_BIO, ERR_R_PASSED_NULL_PARAMETER);
+        return -1;
+    }
+    if (!1/* bio->init */) {
+        ERR_raise(ERR_LIB_BIO, BIO_R_UNINITIALIZED);
+        return -1;
+    }
+
+    while (size-- > 1 && (ret = BIO_read(bio, ptr, 1)) > 0)
+        if (*ptr++ == '\n')
+            break;
+    *ptr = '\0';
+    return ret > 0 || BIO_eof(bio) ? ptr - buf : ret;
+}
+
+#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
 
 #if OPENSSL_VERSION_NUMBER < 0x10100005L
 /*
