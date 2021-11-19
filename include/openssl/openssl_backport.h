@@ -146,6 +146,7 @@ int X509_STORE_add_cert_dups(X509_STORE *ctx, X509 *x);
 #  define OPENSSL_CMP_CONST
 # endif
 # if OPENSSL_VERSION_NUMBER < 0x10100004L
+#  define OPENSSL_die(msg, file, line) OpenSSLDie(file, line, msg)
 #  define OPENSSL_FILE __FILE__
 #  define OPENSSL_LINE __LINE__
 #  define BIO_up_ref(b)((b)->references++)
@@ -431,7 +432,6 @@ int ossl_x509_add_certs_new(STACK_OF(X509) **p_sk, STACK_OF(X509) *certs,
                             int flags);
 int ossl_x509_add_cert_new(STACK_OF(X509) **p_sk, X509 *cert, int flags);
 /* from internal/cryptlib.h: */
-#  define ossl_assert(x) ((x) != 0)
 int openssl_strerror_r(int errnum, char *buf, size_t buflen);
 
 typedef struct ossl_http_req_ctx_st OSSL_HTTP_REQ_CTX;
