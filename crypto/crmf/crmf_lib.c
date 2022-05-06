@@ -628,32 +628,28 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
 
 
 /* TODO move to cms.h.in */
-void
-CMS_ContentInfo_set0_EnvelopedData(CMS_ContentInfo *ci, CMS_EnvelopedData *env);
-void CMS_ContentInfo_set0_SignedData(CMS_ContentInfo *ci, CMS_SignedData *sd);
+BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
+                               EVP_PKEY *pkey, X509 *cert,
+                               ASN1_OCTET_STRING *secret, unsigned int flags);
 CMS_SignedData *d2i_CMS_SignedData_bio(BIO *bp, CMS_SignedData **sd);
+BIO *CMS_SignedData_unwrap_verify(CMS_SignedData *sd, BIO *detached_data,
+                                  STACK_OF(X509) *untrusted, X509_STORE *ts,
+                                  unsigned int flags);
 
 /* extract private key from envelopedData in encryptedKey */
 EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
                                           X509_STORE *ts,
                                           STACK_OF(X509) *untrusted,
                                           EVP_PKEY *pkey, X509 *cert,
-                                          ASN1_OCTET_STRING *secret) {
-
-    EVP_PKEY *ret = NULL;
-    CMS_ContentInfo *ci = NULL;
-    BIO *signed_data_bio = NULL;
-    CMS_SignedData *sd;
-    CMS_ContentInfo *signed_ci = NULL;
+                                          ASN1_OCTET_STRING *secret)
+{
+    BIO *bio = NULL;
+    CMS_SignedData *sd = NULL;
     BIO *pkey_bio = NULL;
-
+    EVP_PKEY *ret = NULL;
 
     if (encryptedKey == NULL) {
          ERR_raise(ERR_LIB_CRMF, CRMF_R_NULL_ARGUMENT);
-         goto end;
-    }
-    if ((pkey == NULL) != (cert == NULL)) {
-         ERR_raise(ERR_LIB_CRMF, ERR_R_PASSED_INVALID_ARGUMENT);
          goto end;
     }
     if (encryptedKey->type != OSSL_CRMF_ENCRYPTEDKEY_ENVELOPEDDATA) {
@@ -662,37 +658,16 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
-    if (encryptedKey->value.envelopedData == NULL) {
-        /* TODO: use better CRMF_R_ERROR_* code */
-        /* "EncryptedKey missing" */
-        ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
-        goto end;
-    }
 
-    /* unpack EnvelopedData */
-    if ((ci = CMS_ContentInfo_new()) == NULL
-            || (signed_data_bio = BIO_new(BIO_s_mem())) == NULL)
-         goto end;
-    CMS_ContentInfo_set0_EnvelopedData(ci, encryptedKey->value.envelopedData);
-    if (secret != NULL
-            && CMS_decrypt_set1_password(ci, (unsigned char *)
-                                         ASN1_STRING_get0_data(secret),
-                                         ASN1_STRING_length(secret)) != 1)
-        goto end;
-    if (CMS_decrypt(ci, pkey, cert, NULL, signed_data_bio, 0) != 1) {
+    if ((bio = CMS_EnvelopedData_decrypt(encryptedKey->value.envelopedData,
+                                         NULL, pkey, cert, secret, 0)) == NULL) {
         /* TODO: use better CRMF_R_ERROR_* code*/
         /* "unable to decrypt EncryptedKey" */
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
 
-    /* unpack SignedData */
-    sd = d2i_CMS_SignedData_bio(signed_data_bio, NULL);
-    if (sd == NULL
-            || (signed_ci = CMS_ContentInfo_new()) == NULL
-            || (pkey_bio = BIO_new(BIO_s_mem())) == NULL)
-         goto end;
-    CMS_ContentInfo_set0_SignedData(signed_ci, sd);
+    sd = d2i_CMS_SignedData_bio(bio, NULL);
     /*
      * TODO:
      * Find better solution than adding CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN
@@ -700,13 +675,16 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
      * From manpage of CMS_verify: "Each signing certificate is chain verified
      * using the *smimesign* purpose and the supplied trusted certificate store"
      */
-    if (CMS_verify(signed_ci, untrusted, ts, NULL, pkey_bio,
-                   CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN) != 1) {
+    if (sd == NULL
+        || (pkey_bio = CMS_SignedData_unwrap_verify(sd, NULL, untrusted, ts,
+                                                    CMS_NO_SIGNER_CERT_VERIFY
+                                                    | CMS_NOINTERN)) == NULL) {
         /* TODO: use better CRMF_R_ERROR_* code*/
         /* "unable to verify signature of EncryptedKey" */
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
         goto end;
     }
+
     /* unpack AsymmetricKeyPackage */
     ret = d2i_PrivateKey_bio(pkey_bio, NULL);
     if (ret == NULL) {
@@ -717,11 +695,7 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_key(OSSL_CRMF_ENCRYPTEDKEY* encryptedKey,
     }
 
   end:
-    if (ci != NULL)
-        CMS_ContentInfo_set0_EnvelopedData(ci, NULL);
-    CMS_ContentInfo_free(ci);
-    BIO_free(signed_data_bio);
-    CMS_ContentInfo_free(signed_ci);
+    BIO_free(bio);
     BIO_free(pkey_bio);
 
     return ret;
@@ -844,17 +818,71 @@ X509
 
 /* TODO move to ../cms */
 # include "/home/david/openssl/prepare-1.1.1/crypto/cms/cms_local.h" /* TODO remove when decls have been moved */
-void
-CMS_ContentInfo_set0_EnvelopedData(CMS_ContentInfo *ci, CMS_EnvelopedData *env)
+BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
+                               EVP_PKEY *pkey, X509 *cert,
+                               ASN1_OCTET_STRING *secret, unsigned int flags)
 {
+    CMS_ContentInfo *ci;
+    BIO *bio = NULL;
+    int res = 0;
+
+    if (env == NULL) {
+         ERR_raise(ERR_LIB_CRMF, CRMF_R_NULL_ARGUMENT);
+         return NULL;
+    }
+
+    if ((ci = CMS_ContentInfo_new()) == NULL
+            || (bio = BIO_new(BIO_s_mem())) == NULL)
+         goto end;
     ci->contentType = OBJ_nid2obj(NID_pkcs7_enveloped);
     ci->d.envelopedData = env;
+    if (secret != NULL
+        && CMS_decrypt_set1_password(ci, (unsigned char *)
+                                     ASN1_STRING_get0_data(secret),
+                                     ASN1_STRING_length(secret)) != 1)
+        goto end;
+    res = CMS_decrypt(ci, pkey, cert, detached_data, bio, flags);
+
+ end:
+    if (ci != NULL)
+        ci->d.envelopedData = NULL;
+    CMS_ContentInfo_free(ci);
+    if (!res) {
+        BIO_free(bio);
+        bio = NULL;
+    }
+    return bio;
 }
 
-void CMS_ContentInfo_set0_SignedData(CMS_ContentInfo *ci, CMS_SignedData *sd)
+BIO *CMS_SignedData_unwrap_verify(CMS_SignedData *sd /* consumed */,
+                                  BIO *detached_data,
+                                  STACK_OF(X509) *untrusted, X509_STORE *ts,
+                                  unsigned int flags)
 {
+    CMS_ContentInfo *ci;
+    BIO *bio = NULL;
+    int res = 0;
+
+    if (sd == NULL) {
+        ERR_raise(ERR_LIB_CRMF, CRMF_R_NULL_ARGUMENT);
+        return NULL;
+    }
+        
+    if ((ci = CMS_ContentInfo_new()) == NULL)
+        return NULL;
     ci->contentType = OBJ_nid2obj(NID_pkcs7_signed);
     ci->d.signedData = sd;
+    if ((bio = BIO_new(BIO_s_mem())) == NULL)
+        goto end;
+    res = CMS_verify(ci, untrusted, ts, detached_data, bio, flags);
+
+ end:
+    CMS_ContentInfo_free(ci);
+    if (!res) {
+        BIO_free(bio);
+        bio = NULL;
+    }
+    return bio;
 }
 
 CMS_SignedData *d2i_CMS_SignedData_bio(BIO *bp, CMS_SignedData **sd)

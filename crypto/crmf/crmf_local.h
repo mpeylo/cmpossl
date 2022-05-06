@@ -15,16 +15,14 @@
 # define OSSL_CRYPTO_CRMF_LOCAL_H
 
 # include <openssl/crmf.h>
+# include <openssl/cms.h> /* for CMS_EnvelopedData and CMS_SignedData */
 # include <openssl/err.h>
-
-# include <openssl/cms.h>
 
 /* explicit #includes not strictly needed since implied by the above: */
 # include <openssl/types.h>
 # include <openssl/safestack.h>
 # include <openssl/x509.h>
 # include <openssl/x509v3.h>
-# include <openssl/cms.h>
 
 /*-
  * EncryptedValue ::= SEQUENCE {
@@ -54,10 +52,9 @@ struct ossl_crmf_encryptedvalue_st {
     ASN1_BIT_STRING *encValue;
 } /* OSSL_CRMF_ENCRYPTEDVALUE */;
 
-
 /*
  *    EncryptedKey ::= CHOICE {
- *       encryptedValue        EncryptedValue, -- deprecated
+ *       encryptedValue        EncryptedValue, -- Deprecated
  *       envelopedData     [0] EnvelopedData }
  *       -- The encrypted private key MUST be placed in the envelopedData
  *       -- encryptedContentInfo encryptedContent OCTET STRING.
@@ -68,11 +65,10 @@ struct ossl_crmf_encryptedvalue_st {
 typedef struct ossl_crmf_encryptedkey_st {
     int type;
     union {
-        OSSL_CRMF_ENCRYPTEDVALUE *encryptedValue;
-        CMS_EnvelopedData *envelopedData;
+        OSSL_CRMF_ENCRYPTEDVALUE *encryptedValue; /* 0 */ /* Deprecated */
+        CMS_EnvelopedData *envelopedData; /* 1 */
     } value;
 } OSSL_CRMF_ENCRYPTEDKEY;
-DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_ENCRYPTEDKEY)
 
 /*-
  *  Attributes ::= SET OF Attribute
@@ -353,12 +349,11 @@ struct ossl_crmf_certtemplate_st {
 struct ossl_crmf_certrequest_st {
     ASN1_INTEGER *certReqId;
     OSSL_CRMF_CERTTEMPLATE *certTemplate;
-    STACK_OF(OSSL_CRMF_ATTRIBUTETYPEANDVALUE /* Controls expanded */) *controls;
+    STACK_OF(OSSL_CRMF_ATTRIBUTETYPEANDVALUE /* = Controls */) *controls;
 } /* OSSL_CRMF_CERTREQUEST */;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_CERTREQUEST)
 DECLARE_ASN1_DUP_FUNCTION(OSSL_CRMF_CERTREQUEST)
 
-/* Isn't there a better way to have this for ANY type? */
 struct ossl_crmf_attributetypeandvalue_st {
     ASN1_OBJECT *type;
     union {
