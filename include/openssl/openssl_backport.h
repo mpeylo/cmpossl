@@ -302,6 +302,10 @@ DECLARE_ASN1_DUP_FUNCTION(X509_PUBKEY)
 
     BIO *ASN1_item_i2d_mem_bio(const ASN1_ITEM *it, const ASN1_VALUE *val);
 #  define X509_new_ex(libctx, propq) ((void)(libctx), (void)(propq), X509_new())
+#  define d2i_PrivateKey_ex_bio(bp, a, libctx, propq) \
+    ((void)(libctx), (void)(propq), d2i_PrivateKey_bio(bp, a))
+#  define d2i_AutoPrivateKey_ex(a, pp, length, libctx, propq) \
+    ((void)(libctx), (void)(propq), d2i_AutoPrivateKey(a, pp, length))
 #  define ASN1_item_new_ex(it, l, pq) ((void)(l), (void)(pq), ASN1_item_new(it))
 #  define ASN1_item_d2i_ex(a, in, len, it, libctx, propq) \
     ((void)(libctx), (void)(propq), ASN1_item_d2i(a, in, len, it))
