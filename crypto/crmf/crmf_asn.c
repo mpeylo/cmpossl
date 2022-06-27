@@ -15,8 +15,22 @@
 
 #include "crmf_local.h"
 
+#ifndef OPENSSL_NO_CMS
 /* TODO remove when CMS API has been extended by CMS_EnvelopedData and CMS_SignedData fns */  
-#include "/home/david/openssl/prepare-1.1.1/crypto/cms/cms_asn1.c"  
+# include "/home/david/openssl/prepare-1.1.1/crypto/cms/cms_asn1.c"
+#else
+struct CMS_EnvelopedData_st {
+    int32_t version;
+    /* missing here: originatorInfo, recipientInfos, encryptedContentInfo */
+    STACK_OF(X509_ATTRIBUTE) *unprotectedAttrs;
+};
+typedef struct CMS_EnvelopedData_st CMS_EnvelopedData;
+ASN1_NDEF_SEQUENCE(CMS_EnvelopedData) = {
+        ASN1_EMBED(CMS_EnvelopedData, version, INT32),
+        /* missing here: originatorInfo, recipientInfos, encryptedContentInfo */
+        ASN1_IMP_SET_OF_OPT(CMS_EnvelopedData, unprotectedAttrs, X509_ATTRIBUTE, 1)
+} ASN1_NDEF_SEQUENCE_END(CMS_EnvelopedData)
+#endif
 
 /* explicit #includes not strictly needed since implied by the above: */
 #include <openssl/crmf.h>

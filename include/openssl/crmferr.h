@@ -24,6 +24,7 @@
  * CRMF reason codes.
  */
 #  define CRMF_R_BAD_PBM_ITERATIONCOUNT                    100
+#  define CRMF_R_CMS_NOT_SUPPORTED                         126
 #  define CRMF_R_CRMFERROR                                 102
 #  define CRMF_R_ERROR                                     103
 #  define CRMF_R_ERROR_DECODING_CERTIFICATE                104
@@ -32,6 +33,7 @@
 #  define CRMF_R_ERROR_DECRYPTING_ENCRYPTEDVALUE           122
 #  define CRMF_R_ERROR_DECRYPTING_ENCRYPTEDKEY             123
 #  define CRMF_R_ERROR_DECRYPTING_SYMMETRIC_KEY            106
+#  define CRMF_R_ERROR_SETTING_PURPOSE                     127
 #  define CRMF_R_ERROR_VERIFYING_ENCRYPTEDKEY              124
 #  define CRMF_R_FAILURE_OBTAINING_RANDOM                  107
 #  define CRMF_R_ITERATIONCOUNT_BELOW_100                  108
