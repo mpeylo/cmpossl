@@ -232,17 +232,16 @@ X509
 *OSSL_CRMF_ENCRYPTEDKEY_get1_encCert(const OSSL_CRMF_ENCRYPTEDKEY *ecert,
                                      OSSL_LIB_CTX *libctx, const char *propq,
                                      EVP_PKEY *pkey, unsigned int flags);
-unsigned char *
-OSSL_CRMF_ENCRYPTEDVALUE_decrypt(const OSSL_CRMF_ENCRYPTEDVALUE *enc,
-                                 OSSL_LIB_CTX *libctx, const char *propq,
-                                 EVP_PKEY *pkey, int *outlen);
-EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
-                                           X509_STORE *ts,
-                                           STACK_OF(X509) *extra,
-                                           EVP_PKEY *pkey, X509 *cert,
-                                           ASN1_OCTET_STRING *secret,
-                                           OSSL_LIB_CTX *libctx,
-                                           const char *propq);
+unsigned char
+*OSSL_CRMF_ENCRYPTEDVALUE_decrypt(const OSSL_CRMF_ENCRYPTEDVALUE *enc,
+                                  EVP_PKEY *pkey, int *outlen,
+                                  OSSL_LIB_CTX *libctx, const char *propq);
+EVP_PKEY
+*OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
+                                   X509_STORE *ts, STACK_OF(X509) *extra,
+                                   EVP_PKEY *pkey, X509 *cert,
+                                   ASN1_OCTET_STRING *secret,
+                                   OSSL_LIB_CTX *libctx, const char *propq);
 
 #  ifdef __cplusplus
 }

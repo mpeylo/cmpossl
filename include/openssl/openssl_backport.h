@@ -329,6 +329,8 @@ DECLARE_ASN1_DUP_FUNCTION(X509_PUBKEY)
                                               X509_PUBKEY_get0(b)) == 0))
 #  define EVP_PKEY_CTX_new_from_pkey(libctx, pkey, propq) \
     EVP_PKEY_CTX_new(((void)(libctx), (void)(propq), pkey), NULL)
+#  define CMS_ContentInfo_new_ex(libctx, propq) \
+    ((void)(libctx), (void)(propq), CMS_ContentInfo_new())
 #  define EVP_PKEY_get_id EVP_PKEY_id
 #  define EVP_MD_get_type EVP_MD_type
 #  define EVP_CIPHER_get_block_size EVP_CIPHER_block_size

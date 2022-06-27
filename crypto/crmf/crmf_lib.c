@@ -623,24 +623,57 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
 /* TODO move to cms.h.in */
 BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
                                EVP_PKEY *pkey, X509 *cert,
-                               ASN1_OCTET_STRING *secret, unsigned int flags);
-BIO *CMS_SignedData_unwrap_verify(CMS_SignedData *sd, BIO *detached_data,
-                                  STACK_OF(X509) *scerts,
-                                  STACK_OF(X509) *extra, X509_STORE *store,
-                                  unsigned int flags);
+                               ASN1_OCTET_STRING *secret, unsigned int flags,
+                               OSSL_LIB_CTX *libctx, const char *propq);
+BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
+                           STACK_OF(X509) *scerts,
+                           X509_STORE *store, STACK_OF(X509) *extra,
+                           unsigned int flags,
+                           OSSL_LIB_CTX *libctx, const char *propq);
 
-EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
-                                           X509_STORE *ts,
-                                           STACK_OF(X509) *extra,
-                                           EVP_PKEY *pkey, X509 *cert,
-                                           ASN1_OCTET_STRING *secret,
-                                           OSSL_LIB_CTX *libctx,
-                                           const char *propq)
+/* check for KGA authorization implied by CA flag or by explicit EKU cmKGA */
+static int check_cmKGA(ossl_unused const X509_PURPOSE *purpose,
+                       const X509 *x, int ca)
+{
+    STACK_OF(ASN1_OBJECT) *ekus;
+    int i, ret = 1;
+
+    if (ca)
+        return ret;
+    ekus =  X509_get_ext_d2i(x, NID_ext_key_usage, NULL, NULL);
+    for (i = 0; i < sk_ASN1_OBJECT_num(ekus); i++) {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+        if (OBJ_obj2nid(sk_ASN1_OBJECT_value(ekus, i)) == NID_cmKGA)
+            goto end;
+#else
+        {
+            char txt[100];
+
+            if (OBJ_obj2txt(txt, sizeof(txt), sk_ASN1_OBJECT_value(ekus, i), 1)
+                    && strcmp(txt, "1.3.6.1.5.5.7.3.32") == 0) /* OID cmKGA */
+                goto end;
+        }
+#endif
+    }
+    ret = 0;
+
+ end:
+    sk_ASN1_OBJECT_pop_free(ekus, ASN1_OBJECT_free);
+    return ret;
+}
+
+EVP_PKEY
+*OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
+                                  X509_STORE *ts, STACK_OF(X509) *extra,
+                                  EVP_PKEY *pkey, X509 *cert,
+                                  ASN1_OCTET_STRING *secret,
+                                  OSSL_LIB_CTX *libctx, const char *propq)
 {
     BIO *bio = NULL;
     CMS_SignedData *sd = NULL;
     BIO *pkey_bio = NULL;
     EVP_PKEY *ret = NULL;
+    int purpose_id = X509_PURPOSE_get_count() + 1;
 
     if (encryptedKey == NULL) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_NULL_ARGUMENT);
@@ -652,7 +685,7 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
         int len;
 
         p = OSSL_CRMF_ENCRYPTEDVALUE_decrypt(encryptedKey->value.encryptedValue,
-                                             libctx, propq, pkey, &len);
+                                             pkey, &len, libctx, propq);
         if ((p_copy = p) != NULL)
             ret = d2i_AutoPrivateKey_ex(NULL, &p_copy, len, libctx, propq);
         OPENSSL_free(p);
@@ -660,24 +693,22 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
     }
 
     if ((bio = CMS_EnvelopedData_decrypt(encryptedKey->value.envelopedData,
-                                         NULL, pkey, cert, secret, 0)) == NULL) {
+                                         NULL, pkey, cert, secret, 0,
+                                         libctx, propq)) == NULL) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_ENCRYPTEDKEY);
         goto end;
     }
 
+    if (!X509_PURPOSE_add(purpose_id, X509_TRUST_COMPAT, 0, check_cmKGA,
+                          "CMP Key Generation Authority", "cmKGA", NULL)
+            || !X509_STORE_set_purpose(ts, purpose_id)) {
+        ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_VERIFYING_ENCRYPTEDKEY);  /* TODO: use better CRMF_R_ERROR_* code */   
+        goto end;
+    }
     sd =  ASN1_item_d2i_bio(ASN1_ITEM_rptr(CMS_SignedData), bio, NULL);
-    /*
-     * TODO:
-     * Find better solution than adding CMS_NO_SIGNER_CERT_VERIFY|CMS_NOINTERN
-     * which is used as workaround for missing CMS purpose.
-     * From manpage of CMS_verify: "Each signing certificate is chain verified
-     * using the *smimesign* purpose and the supplied trusted certificate store"
-     */
     if (sd == NULL
-        || (pkey_bio = CMS_SignedData_unwrap_verify(sd, NULL, NULL /* scerts */,
-                                                    NULL/* TODO extra*/, ts,
-                                                    CMS_NO_SIGNER_CERT_VERIFY))
-        == NULL) {
+        || (pkey_bio = CMS_SignedData_verify(sd, NULL, NULL /* scerts */, ts,
+                                             extra, 0, libctx, propq)) == NULL) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_VERIFYING_ENCRYPTEDKEY);
         goto end;
     }
@@ -696,10 +727,10 @@ EVP_PKEY *OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
     return ret;
 }
 
-unsigned char *
-OSSL_CRMF_ENCRYPTEDVALUE_decrypt(const OSSL_CRMF_ENCRYPTEDVALUE *enc,
-                                 OSSL_LIB_CTX *libctx, const char *propq,
-                                 EVP_PKEY *pkey, int *outlen)
+unsigned char
+*OSSL_CRMF_ENCRYPTEDVALUE_decrypt(const OSSL_CRMF_ENCRYPTEDVALUE *enc,
+                                  EVP_PKEY *pkey, int *outlen,
+                                  OSSL_LIB_CTX *libctx, const char *propq)
 {
     EVP_CIPHER_CTX *evp_ctx = NULL; /* context for symmetric encryption */
     unsigned char *ek = NULL; /* decrypted symmetric encryption key */
@@ -813,7 +844,7 @@ X509
     int len;
     X509 *cert = NULL;
 
-    buf = OSSL_CRMF_ENCRYPTEDVALUE_decrypt(ecert, libctx, propq, pkey, &len);
+    buf = OSSL_CRMF_ENCRYPTEDVALUE_decrypt(ecert, pkey, &len, libctx, propq);
     if ((p = buf) == NULL
             || (cert = X509_new_ex(libctx, propq)) == NULL)
         goto end;
@@ -847,7 +878,8 @@ X509
         return OSSL_CRMF_ENCRYPTEDVALUE_get1_encCert(ecert->value.encryptedValue,
                                                      libctx, propq, pkey);
     bio = CMS_EnvelopedData_decrypt(ecert->value.envelopedData, NULL,
-                                    pkey, NULL /* cert */, NULL, flags);
+                                    pkey, NULL /* cert */, NULL, flags,
+                                    libctx, propq);
     if (bio == NULL)
         return NULL;
     cert = d2i_X509_bio(bio, NULL);
@@ -859,10 +891,15 @@ X509
 
 
 /* TODO move to ../cms */
-#include "/home/david/openssl/prepare-1.1.1/crypto/cms/cms_local.h" /* TODO remove when decls have been moved */
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+# include "/home/david/openssl/prepare-cmp/crypto/cms/cms_local.h" /* TODO remove when decls have been moved */
+#else
+# include "/home/david/openssl/prepare-1.1.1/crypto/cms/cms_local.h" /* TODO remove when decls have been moved */
+#endif
 BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
                                EVP_PKEY *pkey, X509 *cert,
-                               ASN1_OCTET_STRING *secret, unsigned int flags)
+                               ASN1_OCTET_STRING *secret, unsigned int flags,
+                               OSSL_LIB_CTX *libctx, const char *propq)
 {
     CMS_ContentInfo *ci;
     BIO *bio = NULL;
@@ -873,7 +910,7 @@ BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
         return NULL;
     }
 
-    if ((ci = CMS_ContentInfo_new()) == NULL
+    if ((ci = CMS_ContentInfo_new_ex(libctx, propq)) == NULL
             || (bio = BIO_new(BIO_s_mem())) == NULL)
         goto end;
     ci->contentType = OBJ_nid2obj(NID_pkcs7_enveloped);
@@ -896,10 +933,11 @@ BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
     return bio;
 }
 
-BIO *CMS_SignedData_unwrap_verify(CMS_SignedData *sd, BIO *detached_data,
-                                  STACK_OF(X509) *scerts,
-                                  STACK_OF(X509) *extra, X509_STORE *store,
-                                  unsigned int flags)
+BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
+                           STACK_OF(X509) *scerts,
+                           X509_STORE *store, STACK_OF(X509) *extra,
+                           unsigned int flags,
+                           OSSL_LIB_CTX *libctx, const char *propq)
 {
     CMS_ContentInfo *ci;
     BIO *bio = NULL;
@@ -910,15 +948,15 @@ BIO *CMS_SignedData_unwrap_verify(CMS_SignedData *sd, BIO *detached_data,
         return NULL;
     }
 
-    if ((ci = CMS_ContentInfo_new()) == NULL)
+    if ((ci = CMS_ContentInfo_new_ex(libctx, propq)) == NULL)
         return NULL;
+    if ((bio = BIO_new(BIO_s_mem())) == NULL)
+        goto end;
     ci->contentType = OBJ_nid2obj(NID_pkcs7_signed);
     ci->d.signedData = sd;
     for (i = 0; i < sk_X509_num(extra); i++)
         if (!CMS_add1_cert(ci, sk_X509_value(extra, i)))
             goto end;
-    if ((bio = BIO_new(BIO_s_mem())) == NULL)
-        goto end;
     res = CMS_verify(ci, scerts, store, detached_data, bio, flags);
 
  end:
