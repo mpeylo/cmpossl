@@ -27,11 +27,11 @@
 #  include <openssl/crmferr.h>
 #  include <openssl/x509v3.h> /* for GENERAL_NAME etc. */
 
-/* TODO move to cms.h.in */  
+/* added to OpenSSL 3.1 in #18301 and #18667 */
 typedef struct CMS_EnvelopedData_st CMS_EnvelopedData;
 typedef struct CMS_SignedData_st CMS_SignedData;
-DECLARE_ASN1_ITEM(CMS_SignedData)
 DECLARE_ASN1_ITEM(CMS_EnvelopedData)
+DECLARE_ASN1_ALLOC_FUNCTIONS(CMS_SignedData)
 
 /* explicit #includes not strictly needed since implied by the above: */
 #  include <openssl/types.h>

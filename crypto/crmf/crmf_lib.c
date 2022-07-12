@@ -569,7 +569,7 @@ const ASN1_INTEGER *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID *c
     return cid != NULL ? cid->serialNumber : NULL;
 }
 
-#if OPENSSL_VERSION_NUMBER <= 0x30100000L
+#if OPENSSL_VERSION_NUMBER < 0x30100000L
 /* copied from ../x509/x_pubkey.c: */
 struct X509_pubkey_st {
     X509_ALGOR *algor;
@@ -654,12 +654,15 @@ static int check_cmKGA(ossl_unused const X509_PURPOSE *purpose,
     return ret;
 }
 
+DECLARE_ASN1_ITEM(CMS_SignedData) /* copied from cms_local.h */
+
 /* added to OpenSSL 3.1 in #18301 */
 BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
                                EVP_PKEY *pkey, X509 *cert,
                                ASN1_OCTET_STRING *secret, unsigned int flags,
                                OSSL_LIB_CTX *libctx, const char *propq);
 /* added to OpenSSL 3.1 in #18667 */
+IMPLEMENT_ASN1_ALLOC_FUNCTIONS(CMS_SignedData)
 BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
                            STACK_OF(X509) *scerts, X509_STORE *store,
                            STACK_OF(X509) *extra, STACK_OF(X509_CRL) *crls,
@@ -730,6 +733,7 @@ EVP_PKEY
     }
 
  end:
+    CMS_SignedData_free(sd);
     BIO_free(bio);
     BIO_free(pkey_bio);
     return ret;
@@ -913,11 +917,38 @@ X509
 
 
 #ifndef OPENSSL_NO_CMS
-# if OPENSSL_VERSION_NUMBER >= 0x30000000L
-#  include "/home/david/openssl/prepare-cmp/crypto/cms/cms_local.h" /* TODO remove when decls have been moved */
-# else
-#  include "/home/david/openssl/prepare-1.1.1/crypto/cms/cms_local.h" /* TODO remove when decls have been moved */
-# endif
+
+# if OPENSSL_VERSION_NUMBER < 0x30100000L
+
+/* copied from crypto/cms/cms_local.h for being able to access */
+typedef struct CMS_DigestedData_st CMS_DigestedData;
+typedef struct CMS_EncryptedData_st CMS_EncryptedData;
+typedef struct CMS_AuthenticatedData_st CMS_AuthenticatedData;
+typedef struct CMS_AuthEnvelopedData_st CMS_AuthEnvelopedData;
+typedef struct CMS_CompressedData_st CMS_CompressedData;
+typedef struct CMS_CTX_st CMS_CTX;
+struct CMS_CTX_st {
+    OSSL_LIB_CTX *libctx;
+    char *propq;
+};
+struct CMS_ContentInfo_st {
+    ASN1_OBJECT *contentType;
+    union {
+        ASN1_OCTET_STRING *data;
+        CMS_SignedData *signedData;
+        CMS_EnvelopedData *envelopedData;
+        CMS_DigestedData *digestedData;
+        CMS_EncryptedData *encryptedData;
+        CMS_AuthEnvelopedData *authEnvelopedData;
+        CMS_AuthenticatedData *authenticatedData;
+        CMS_CompressedData *compressedData;
+        ASN1_TYPE *other;
+        /* Other types ... */
+        void *otherData;
+    } d;
+    CMS_CTX ctx;
+};
+
 
 /* added to OpenSSL 3.1 in #18301 */
 BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
@@ -948,7 +979,7 @@ BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
 
  end:
     if (ci != NULL)
-        ci->d.envelopedData = NULL;
+        ci->d.envelopedData = NULL; /* do not indirectly free |env| */
     CMS_ContentInfo_free(ci);
     if (!res) {
         BIO_free(bio);
@@ -989,6 +1020,8 @@ BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
     res = CMS_verify(ci, scerts, store, detached_data, bio, flags);
 
  end:
+    if (ci != NULL)
+        ci->d.signedData = NULL; /* do not indirectly free |sd| */
     CMS_ContentInfo_free(ci);
     if (!res) {
         BIO_free(bio);
@@ -996,4 +1029,5 @@ BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
     }
     return bio;
 }
+# endif /* OPENSSL_VERSION_NUMBER < 0x30100000L */
 #endif /* OPENSSL_NO_CMS */
