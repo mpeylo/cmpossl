@@ -185,6 +185,10 @@ OSSL_CMP_MSG *ossl_cmp_msg_create(OSSL_CMP_CTX *ctx, int bodytype)
     case OSSL_CMP_PKIBODY_IR:
     case OSSL_CMP_PKIBODY_CR:
     case OSSL_CMP_PKIBODY_KUR:
+        if (OSSL_CMP_CTX_get_option(ctx, OSSL_CMP_OPT_POPO_METHOD)
+            == OSSL_CRMF_POPO_NONE /* central key generation */
+                && !ossl_cmp_hdr_set_pvno(msg->header, OSSL_CMP_PVNO_3))
+            return 0;
         if ((msg->body->value.ir = OSSL_CRMF_MSGS_new()) == NULL)
             goto err;
         return msg;

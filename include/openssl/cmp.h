@@ -35,7 +35,9 @@
 extern "C" {
 #  endif
 
-#  define OSSL_CMP_PVNO 2
+#  define OSSL_CMP_PVNO_2 2
+#  define OSSL_CMP_PVNO_3 3
+#  define OSSL_CMP_PVNO OSSL_CMP_PVNO_2 /* v2 is the default */
 
 /*-
  *   PKIFailureInfo ::= BIT STRING {
