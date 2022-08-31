@@ -717,6 +717,7 @@ EVP_PKEY
         goto end;
     }
     sd =  ASN1_item_d2i_bio(ASN1_ITEM_rptr(CMS_SignedData), bio, NULL);
+    extra = NULL; /* workaround for CMS_add0_cert() in cms_lib.c not allowing duplicate untrusted certs */
     if (sd == NULL
         || (pkey_bio = CMS_SignedData_verify(sd, NULL, NULL /* scerts */, ts,
                                              extra, NULL, 0, libctx, propq))
