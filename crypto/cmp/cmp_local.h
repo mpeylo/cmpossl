@@ -263,7 +263,7 @@ typedef struct ossl_cmp_certorenccert_st {
     int type;
     union {
         X509 *certificate;
-        OSSL_CRMF_ENCRYPTEDVALUE *encryptedCert;
+        OSSL_CRMF_ENCRYPTEDKEY *encryptedCert;
     } value;
 } OSSL_CMP_CERTORENCCERT;
 DECLARE_ASN1_FUNCTIONS(OSSL_CMP_CERTORENCCERT)
@@ -278,7 +278,7 @@ DECLARE_ASN1_FUNCTIONS(OSSL_CMP_CERTORENCCERT)
  */
 typedef struct ossl_cmp_certifiedkeypair_st {
     OSSL_CMP_CERTORENCCERT *certOrEncCert;
-    OSSL_CRMF_ENCRYPTEDVALUE *privateKey;
+    OSSL_CRMF_ENCRYPTEDKEY *privateKey;
     OSSL_CRMF_PKIPUBLICATIONINFO *publicationInfo;
 } OSSL_CMP_CERTIFIEDKEYPAIR;
 DECLARE_ASN1_FUNCTIONS(OSSL_CMP_CERTIFIEDKEYPAIR)
@@ -912,9 +912,8 @@ ossl_cmp_pollrepcontent_get0_pollrep(const OSSL_CMP_POLLREPCONTENT *prc,
 OSSL_CMP_CERTRESPONSE *
 ossl_cmp_certrepmessage_get0_certresponse(const OSSL_CMP_CERTREPMESSAGE *crm,
                                           int rid);
-X509 *ossl_cmp_certresponse_get1_cert(const OSSL_CMP_CERTRESPONSE *crep,
-                                      const OSSL_CMP_CTX *ctx, EVP_PKEY *pkey);
-OSSL_CMP_MSG *ossl_cmp_msg_load(const char *file);
+X509 *ossl_cmp_certresponse_get1_cert_key(const OSSL_CMP_CERTRESPONSE *crep,
+                                          const OSSL_CMP_CTX *ctx, EVP_PKEY *pkey);
 
 /* from cmp_protect.c */
 int ossl_cmp_msg_add_extraCerts(OSSL_CMP_CTX *ctx, OSSL_CMP_MSG *msg);

@@ -314,6 +314,10 @@ DECLARE_ASN1_DUP_FUNCTION(X509_PUBKEY)
 
     BIO *ASN1_item_i2d_mem_bio(const ASN1_ITEM *it, const ASN1_VALUE *val);
 #  define X509_new_ex(libctx, propq) ((void)(libctx), (void)(propq), X509_new())
+#  define d2i_PrivateKey_ex_bio(bp, a, libctx, propq) \
+    ((void)(libctx), (void)(propq), d2i_PrivateKey_bio(bp, a))
+#  define d2i_AutoPrivateKey_ex(a, pp, length, libctx, propq) \
+    ((void)(libctx), (void)(propq), d2i_AutoPrivateKey(a, pp, length))
 #  define ASN1_item_new_ex(it, l, pq) ((void)(l), (void)(pq), ASN1_item_new(it))
 #  define ASN1_item_d2i_ex(a, in, len, it, libctx, propq) \
     ((void)(libctx), (void)(propq), ASN1_item_d2i(a, in, len, it))
@@ -339,6 +343,8 @@ int EVP_PKEY_get_default_digest_name(EVP_PKEY *pkey,
                                      char *mdname, size_t mdname_sz);
 #  define EVP_PKEY_CTX_new_from_pkey(libctx, pkey, propq) \
     EVP_PKEY_CTX_new(((void)(libctx), (void)(propq), pkey), NULL)
+#  define CMS_ContentInfo_new_ex(libctx, propq) \
+    ((void)(libctx), (void)(propq), CMS_ContentInfo_new())
 #  define EVP_PKEY_get_id EVP_PKEY_id
 #  define EVP_MD_get_type EVP_MD_type
 #  define EVP_CIPHER_get_block_size EVP_CIPHER_block_size

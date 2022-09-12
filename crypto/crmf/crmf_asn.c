@@ -15,6 +15,23 @@
 
 #include "crmf_local.h"
 
+#ifndef OPENSSL_NO_CMS
+/* TODO remove when CMS API has been extended by CMS_EnvelopedData and CMS_SignedData fns */  
+# include "/home/david/openssl/prepare-1.1.1/crypto/cms/cms_asn1.c"
+#else
+struct CMS_EnvelopedData_st {
+    int32_t version;
+    /* missing here: originatorInfo, recipientInfos, encryptedContentInfo */
+    STACK_OF(X509_ATTRIBUTE) *unprotectedAttrs;
+};
+typedef struct CMS_EnvelopedData_st CMS_EnvelopedData;
+ASN1_NDEF_SEQUENCE(CMS_EnvelopedData) = {
+        ASN1_EMBED(CMS_EnvelopedData, version, INT32),
+        /* missing here: originatorInfo, recipientInfos, encryptedContentInfo */
+        ASN1_IMP_SET_OF_OPT(CMS_EnvelopedData, unprotectedAttrs, X509_ATTRIBUTE, 1)
+} ASN1_NDEF_SEQUENCE_END(CMS_EnvelopedData)
+#endif
+
 /* explicit #includes not strictly needed since implied by the above: */
 #include <openssl/crmf.h>
 
@@ -62,6 +79,19 @@ ASN1_SEQUENCE(OSSL_CRMF_ENCRYPTEDVALUE) = {
 } ASN1_SEQUENCE_END(OSSL_CRMF_ENCRYPTEDVALUE)
 IMPLEMENT_ASN1_FUNCTIONS(OSSL_CRMF_ENCRYPTEDVALUE)
 
+/*
+ * Note from CMP Updates defining CMPv3:
+ * The EncryptedKey structure defined in CRMF [RFC4211] is reused
+ * here, which makes the update backward compatible.  Using the new
+ * syntax with the untagged default choice EncryptedValue is bits-on-
+ * the-wire compatible with the old syntax.
+ */
+ASN1_CHOICE(OSSL_CRMF_ENCRYPTEDKEY) = {
+    ASN1_SIMPLE(OSSL_CRMF_ENCRYPTEDKEY, value.encryptedValue, OSSL_CRMF_ENCRYPTEDVALUE),
+    ASN1_IMP(OSSL_CRMF_ENCRYPTEDKEY, value.envelopedData, CMS_EnvelopedData, 0),
+} ASN1_CHOICE_END(OSSL_CRMF_ENCRYPTEDKEY)
+IMPLEMENT_ASN1_FUNCTIONS(OSSL_CRMF_ENCRYPTEDKEY)
+
 ASN1_SEQUENCE(OSSL_CRMF_SINGLEPUBINFO) = {
     ASN1_SIMPLE(OSSL_CRMF_SINGLEPUBINFO, pubMethod, ASN1_INTEGER),
     ASN1_SIMPLE(OSSL_CRMF_SINGLEPUBINFO, pubLocation, GENERAL_NAME)
@@ -90,8 +120,7 @@ ASN1_CHOICE(OSSL_CRMF_POPOPRIVKEY) = {
     ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.subsequentMessage, ASN1_INTEGER, 1),
     ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.dhMAC, ASN1_BIT_STRING, 2),
     ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.agreeMAC, OSSL_CRMF_PKMACVALUE, 3),
-    ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.encryptedKey, ASN1_NULL, 4),
-    /* When supported, ASN1_NULL needs to be replaced by CMS_ENVELOPEDDATA */
+    ASN1_IMP(OSSL_CRMF_POPOPRIVKEY, value.encryptedKey, CMS_EnvelopedData, 4),
 } ASN1_CHOICE_END(OSSL_CRMF_POPOPRIVKEY)
 IMPLEMENT_ASN1_FUNCTIONS(OSSL_CRMF_POPOPRIVKEY)
 

@@ -27,6 +27,12 @@
 #  include <openssl/crmferr.h>
 #  include <openssl/x509v3.h> /* for GENERAL_NAME etc. */
 
+/* added to OpenSSL 3.1 in #18301 and #18667 */
+typedef struct CMS_EnvelopedData_st CMS_EnvelopedData;
+typedef struct CMS_SignedData_st CMS_SignedData;
+DECLARE_ASN1_ITEM(CMS_EnvelopedData)
+DECLARE_ASN1_ALLOC_FUNCTIONS(CMS_SignedData)
+
 /* explicit #includes not strictly needed since implied by the above: */
 #  include <openssl/types.h>
 #  include <openssl/x509.h>
@@ -46,6 +52,8 @@ extern "C" {
 
 typedef struct ossl_crmf_encryptedvalue_st OSSL_CRMF_ENCRYPTEDVALUE;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_ENCRYPTEDVALUE)
+typedef struct ossl_crmf_encryptedkey_st OSSL_CRMF_ENCRYPTEDKEY;
+DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_ENCRYPTEDKEY)
 typedef struct ossl_crmf_msg_st OSSL_CRMF_MSG;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_MSG)
 DECLARE_ASN1_DUP_FUNCTION(OSSL_CRMF_MSG)
@@ -211,14 +219,29 @@ const X509_NAME
 const ASN1_INTEGER
 *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID *cid);
 int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
-                                EVP_PKEY *pubkey,
+                                EVP_PKEY *pubkey, int central_keygen,
                                 const X509_NAME *subject,
                                 const X509_NAME *issuer,
                                 const ASN1_INTEGER *serial);
+
 X509
 *OSSL_CRMF_ENCRYPTEDVALUE_get1_encCert(const OSSL_CRMF_ENCRYPTEDVALUE *ecert,
                                        OSSL_LIB_CTX *libctx, const char *propq,
                                        EVP_PKEY *pkey);
+X509
+*OSSL_CRMF_ENCRYPTEDKEY_get1_encCert(const OSSL_CRMF_ENCRYPTEDKEY *ecert,
+                                     OSSL_LIB_CTX *libctx, const char *propq,
+                                     EVP_PKEY *pkey, unsigned int flags);
+unsigned char
+*OSSL_CRMF_ENCRYPTEDVALUE_decrypt(const OSSL_CRMF_ENCRYPTEDVALUE *enc,
+                                  EVP_PKEY *pkey, int *outlen,
+                                  OSSL_LIB_CTX *libctx, const char *propq);
+EVP_PKEY
+*OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
+                                   X509_STORE *ts, STACK_OF(X509) *extra,
+                                   EVP_PKEY *pkey, X509 *cert,
+                                   ASN1_OCTET_STRING *secret,
+                                   OSSL_LIB_CTX *libctx, const char *propq);
 
 #  ifdef __cplusplus
 }

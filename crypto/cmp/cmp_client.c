@@ -404,12 +404,12 @@ int ossl_cmp_exchange_error(OSSL_CMP_CTX *ctx, int status, int fail_info,
 }
 
 /*-
- * Retrieve a copy of the certificate, if any, from the given CertResponse.
+ * Retrieve a newly generated cert and key, if any, from the given CertResponse.
  * Take into account PKIStatusInfo of CertResponse in ctx, report it on error.
  * Returns NULL if not found or on error.
  */
-static X509 *get1_cert_status(OSSL_CMP_CTX *ctx, int bodytype,
-                              OSSL_CMP_CERTRESPONSE *crep)
+static X509 *get1_cert_key_status(OSSL_CMP_CTX *ctx, int bodytype,
+                                  OSSL_CMP_CERTRESPONSE *crep)
 {
     char buf[OSSL_CMP_PKISI_BUFLEN];
     X509 *crt = NULL;
@@ -456,7 +456,7 @@ static X509 *get1_cert_status(OSSL_CMP_CTX *ctx, int bodytype,
         ERR_raise(ERR_LIB_CMP, CMP_R_UNKNOWN_PKISTATUS);
         goto err;
     }
-    crt = ossl_cmp_certresponse_get1_cert(crep, ctx, privkey);
+    crt = ossl_cmp_certresponse_get1_cert_key(crep, ctx, privkey);
     if (crt == NULL) /* according to PKIStatus, we can expect a cert */
         ERR_raise(ERR_LIB_CMP, CMP_R_CERTIFICATE_NOT_FOUND);
 
@@ -533,7 +533,7 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
                          ossl_unused int req_type,
                          ossl_unused int expected_type)
 {
-    EVP_PKEY *rkey = OSSL_CMP_CTX_get0_newPkey(ctx /* may be NULL */, 0);
+    EVP_PKEY *rkey;
     int fail_info = 0; /* no failure */
     const char *txt = NULL;
     OSSL_CMP_CERTREPMESSAGE *crepmsg;
@@ -579,7 +579,7 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
         }
     }
 
-    cert = get1_cert_status(ctx, (*resp)->body->type, crep);
+    cert = get1_cert_key_status(ctx, (*resp)->body->type, crep);
     if (cert == NULL) {
         ERR_add_error_data(1, "; cannot extract certificate from response");
         return 0;
@@ -596,6 +596,7 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
         return 0;
 
     subj = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
+    rkey = OSSL_CMP_CTX_get0_newPkey(ctx, 0);
     if (rkey != NULL
         /* X509_check_private_key() also works if rkey is just public key */
             && !(X509_check_private_key(ctx->newCert, rkey))) {

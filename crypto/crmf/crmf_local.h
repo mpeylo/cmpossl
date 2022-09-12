@@ -15,6 +15,7 @@
 # define OSSL_CRYPTO_CRMF_LOCAL_H
 
 # include <openssl/crmf.h>
+# include <openssl/cms.h> /* for CMS_EnvelopedData and CMS_SignedData */
 # include <openssl/err.h>
 
 /* explicit #includes not strictly needed since implied by the above: */
@@ -52,6 +53,24 @@ struct ossl_crmf_encryptedvalue_st {
     ASN1_OCTET_STRING *valueHint; /* 4 */
     ASN1_BIT_STRING *encValue;
 } /* OSSL_CRMF_ENCRYPTEDVALUE */;
+
+/*
+ *    EncryptedKey ::= CHOICE {
+ *       encryptedValue        EncryptedValue, -- Deprecated
+ *       envelopedData     [0] EnvelopedData }
+ *       -- The encrypted private key MUST be placed in the envelopedData
+ *       -- encryptedContentInfo encryptedContent OCTET STRING.
+ */
+
+#define OSSL_CRMF_ENCRYPTEDKEY_ENVELOPEDDATA 1
+
+typedef struct ossl_crmf_encryptedkey_st {
+    int type;
+    union {
+        OSSL_CRMF_ENCRYPTEDVALUE *encryptedValue; /* 0 */ /* Deprecated */
+        CMS_EnvelopedData *envelopedData; /* 1 */
+    } value;
+} OSSL_CRMF_ENCRYPTEDKEY;
 
 /*-
  *  Attributes ::= SET OF Attribute
@@ -190,8 +209,7 @@ typedef struct ossl_crmf_popoprivkey_st {
         ASN1_INTEGER *subsequentMessage; /* 1 */
         ASN1_BIT_STRING *dhMAC; /* 2 */ /* Deprecated */
         OSSL_CRMF_PKMACVALUE *agreeMAC; /* 3 */
-        ASN1_NULL *encryptedKey; /* 4 */
-        /* When supported, ASN1_NULL needs to be replaced by CMS_ENVELOPEDDATA */
+        CMS_EnvelopedData *encryptedKey; /* 4 */
     } value;
 } OSSL_CRMF_POPOPRIVKEY;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_POPOPRIVKEY)
@@ -333,12 +351,11 @@ struct ossl_crmf_certtemplate_st {
 struct ossl_crmf_certrequest_st {
     ASN1_INTEGER *certReqId;
     OSSL_CRMF_CERTTEMPLATE *certTemplate;
-    STACK_OF(OSSL_CRMF_ATTRIBUTETYPEANDVALUE /* Controls expanded */) *controls;
+    STACK_OF(OSSL_CRMF_ATTRIBUTETYPEANDVALUE /* = Controls */) *controls;
 } /* OSSL_CRMF_CERTREQUEST */;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_CERTREQUEST)
 DECLARE_ASN1_DUP_FUNCTION(OSSL_CRMF_CERTREQUEST)
 
-/* Isn't there a better way to have this for ANY type? */
 struct ossl_crmf_attributetypeandvalue_st {
     ASN1_OBJECT *type;
     union {
