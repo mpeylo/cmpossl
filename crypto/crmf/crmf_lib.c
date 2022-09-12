@@ -41,13 +41,13 @@
 IMPLEMENT_ASN1_DUP_FUNCTION(X509_PUBKEY)
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER <= 0x30100000L
 /*-
  * atyp = Attribute Type
  * valt = Value Type
  * ctrlinf = "regCtrl" or "regInfo"
  */
-# define IMPLEMENT_CRMF_CTRL_FUNC(atyp, valt, ctrlinf)                        \
+#define IMPLEMENT_CRMF_CTRL_FUNC(atyp, valt, ctrlinf)                        \
 valt *OSSL_CRMF_MSG_get0_##ctrlinf##_##atyp(const OSSL_CRMF_MSG *msg)        \
 {                                                                            \
     int i;                                                                   \
@@ -122,7 +122,7 @@ static int OSSL_CRMF_MSG_push0_regCtrl(OSSL_CRMF_MSG *crm,
 IMPLEMENT_CRMF_CTRL_FUNC(regToken, ASN1_STRING, regCtrl)
 
 /* id-regCtrl-authenticator Control (section 6.2) */
-# define ASN1_UTF8STRING_dup ASN1_STRING_dup
+#define ASN1_UTF8STRING_dup ASN1_STRING_dup
 IMPLEMENT_CRMF_CTRL_FUNC(authenticator, ASN1_UTF8STRING, regCtrl)
 
 int OSSL_CRMF_MSG_set0_SinglePubInfo(OSSL_CRMF_SINGLEPUBINFO *spi,
@@ -577,7 +577,7 @@ const ASN1_INTEGER *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID *c
     return cid != NULL ? cid->serialNumber : NULL;
 }
 
-# if OPENSSL_VERSION_NUMBER < 0x30100000L
+#if OPENSSL_VERSION_NUMBER < 0x30100000L
 /* copied from ../x509/x_pubkey.c: */
 struct X509_pubkey_st {
     X509_ALGOR *algor;
@@ -595,7 +595,7 @@ static void X509_PUBKEY_set0_public_key(X509_PUBKEY *pub,
     pub->public_key->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
     pub->public_key->flags |= ASN1_STRING_FLAG_BITS_LEFT;
 }
-# endif
+#endif
 
 /*-
  * fill in certificate template.
@@ -630,7 +630,7 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
 }
 
 
-# ifndef OPENSSL_NO_CMS
+#ifndef OPENSSL_NO_CMS
 /* check for KGA authorization implied by CA flag or by explicit EKU cmKGA */
 static int check_cmKGA(ossl_unused const X509_PURPOSE *purpose,
                        const X509 *x, int ca)
@@ -642,10 +642,10 @@ static int check_cmKGA(ossl_unused const X509_PURPOSE *purpose,
         return ret;
     ekus =  X509_get_ext_d2i(x, NID_ext_key_usage, NULL, NULL);
     for (i = 0; i < sk_ASN1_OBJECT_num(ekus); i++) {
-#  if OPENSSL_VERSION_NUMBER >= 0x30000000L
+# if OPENSSL_VERSION_NUMBER >= 0x30000000L
         if (OBJ_obj2nid(sk_ASN1_OBJECT_value(ekus, i)) == NID_cmKGA)
             goto end;
-#  else
+# else
         {
             char txt[100];
 
@@ -653,7 +653,7 @@ static int check_cmKGA(ossl_unused const X509_PURPOSE *purpose,
                     && strcmp(txt, "1.3.6.1.5.5.7.3.32") == 0) /* OID cmKGA */
                 goto end;
         }
-#  endif
+# endif
     }
     ret = 0;
 
@@ -676,7 +676,7 @@ BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
                            STACK_OF(X509) *extra, STACK_OF(X509_CRL) *crls,
                            unsigned int flags,
                            OSSL_LIB_CTX *libctx, const char *propq);
-# endif /* OPENSSL_NO_CMS */
+#endif /* OPENSSL_NO_CMS */
 
 EVP_PKEY
 *OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
@@ -685,12 +685,12 @@ EVP_PKEY
                                   ASN1_OCTET_STRING *secret,
                                   OSSL_LIB_CTX *libctx, const char *propq)
 {
-# ifndef OPENSSL_NO_CMS
+#ifndef OPENSSL_NO_CMS
     BIO *bio = NULL;
     CMS_SignedData *sd = NULL;
     BIO *pkey_bio = NULL;
     int purpose_id = X509_PURPOSE_get_count() + 1;
-# endif
+#endif
     EVP_PKEY *ret = NULL;
 
     if (encryptedKey == NULL) {
@@ -710,7 +710,7 @@ EVP_PKEY
         return ret;
     }
 
-# ifndef OPENSSL_NO_CMS
+#ifndef OPENSSL_NO_CMS
     if ((bio = CMS_EnvelopedData_decrypt(encryptedKey->value.envelopedData,
                                          NULL, pkey, cert, secret, 0,
                                          libctx, propq)) == NULL) {
@@ -746,12 +746,12 @@ EVP_PKEY
     BIO_free(bio);
     BIO_free(pkey_bio);
     return ret;
-# else
+#else
     /* prevent warning on unused parameters: */
     ((void)ts, (void)extra, (void)cert, (void)secret);
     ERR_raise(ERR_LIB_CRMF, CRMF_R_CMS_NOT_SUPPORTED);
     return NULL;
-# endif /* OPENSSL_NO_CMS */
+#endif /* OPENSSL_NO_CMS */
 }
 
 unsigned char
@@ -898,15 +898,15 @@ X509
                                      OSSL_LIB_CTX *libctx, const char *propq,
                                      EVP_PKEY *pkey, unsigned int flags)
 {
-# ifndef OPENSSL_NO_CMS
+#ifndef OPENSSL_NO_CMS
     BIO *bio;
     X509 *cert = NULL;
-# endif
+#endif
 
     if (ecert->type != OSSL_CRMF_ENCRYPTEDKEY_ENVELOPEDDATA)
         return OSSL_CRMF_ENCRYPTEDVALUE_get1_encCert(ecert->value.encryptedValue,
                                                      libctx, propq, pkey);
-# ifndef OPENSSL_NO_CMS
+#ifndef OPENSSL_NO_CMS
     bio = CMS_EnvelopedData_decrypt(ecert->value.envelopedData, NULL,
                                     pkey, NULL /* cert */, NULL, flags,
                                     libctx, propq);
@@ -917,17 +917,17 @@ X509
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECODING_CERTIFICATE);
     BIO_free(bio);
     return cert;
-# else
+#else
     (void)flags; /* prevent warning on unused parameter */
     ERR_raise(ERR_LIB_CRMF, CRMF_R_CMS_NOT_SUPPORTED);
     return NULL;
-# endif /* OPENSSL_NO_CMS */
+#endif /* OPENSSL_NO_CMS */
 }
 
 
-# ifndef OPENSSL_NO_CMS
+#ifndef OPENSSL_NO_CMS
 
-#  if OPENSSL_VERSION_NUMBER < 0x30100000L
+# if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 /* copied from crypto/cms/cms_local.h for being able to access */
 typedef struct CMS_DigestedData_st CMS_DigestedData;
@@ -1039,6 +1039,6 @@ BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
     return bio;
 }
 
-#  endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
-# endif /* OPENSSL_NO_CMS */
-#endif /* OPENSSL_VERSION_NUMBER < 0x30100000L */
+# endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */
+#endif /* OPENSSL_NO_CMS */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */

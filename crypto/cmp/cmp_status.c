@@ -25,7 +25,7 @@
 #include <openssl/objects.h>
 #include <openssl/x509.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 /* CMP functions related to PKIStatus */
 
@@ -310,4 +310,4 @@ OSSL_CMP_PKISI *OSSL_CMP_STATUSINFO_new(int status, int fail_info,
     return NULL;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */

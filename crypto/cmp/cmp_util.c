@@ -17,7 +17,7 @@
 #include <openssl/err.h> /* should be implied by cmperr.h */
 #include <openssl/x509v3.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 /*
  * use trace API for CMP-specific logging, prefixed by "CMP " and severity
@@ -298,4 +298,4 @@ int ossl_cmp_asn1_octet_string_set1_bytes(ASN1_OCTET_STRING **tgt,
     return 1;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */

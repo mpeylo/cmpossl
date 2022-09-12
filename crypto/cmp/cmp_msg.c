@@ -26,7 +26,7 @@
 # define ASN1_item_i2d(val, out, it) ASN1_item_i2d((ASN1_VALUE *)(val), out, it); /* hack */
 #endif   
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 OSSL_CMP_MSG *OSSL_CMP_MSG_new(OSSL_LIB_CTX *libctx, const char *propq)
 {
@@ -1229,4 +1229,4 @@ int i2d_OSSL_CMP_MSG_bio(BIO *bio, const OSSL_CMP_MSG *msg)
     return ASN1_i2d_bio_of(OSSL_CMP_MSG, i2d_OSSL_CMP_MSG, bio, msg);
 }
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */

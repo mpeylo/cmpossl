@@ -19,7 +19,7 @@
 #include <openssl/cmp.h>
 #include <openssl/err.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 /* the context for the generic CMP server */
 struct ossl_cmp_srv_ctx_st
@@ -648,4 +648,4 @@ OSSL_CMP_MSG *OSSL_CMP_CTX_server_perform(OSSL_CMP_CTX *client_ctx,
     return OSSL_CMP_SRV_process_request(srv_ctx, req);
 }
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */

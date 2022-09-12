@@ -15,7 +15,7 @@
 #include <openssl/err.h>
 #include "internal/cryptlib.h" /* for ossl_assert() */
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 static void init_pstring(char **pstr)
 {
@@ -287,4 +287,4 @@ const char *OSSL_HTTP_adapt_proxy(const char *proxy, const char *no_proxy,
     return proxy;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */

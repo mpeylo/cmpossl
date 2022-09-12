@@ -26,7 +26,7 @@
 #include <openssl/buffer.h>
 #include <openssl/err.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 #define DEFAULT_RETRY_AFTER 60 /* one minute */
 
@@ -121,4 +121,4 @@ OSSL_CMP_MSG *OSSL_CMP_MSG_http_perform(OSSL_CMP_CTX *ctx,
     return res;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */

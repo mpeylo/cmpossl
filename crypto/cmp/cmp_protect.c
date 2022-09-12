@@ -18,7 +18,7 @@
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 /*
  * This function is also used by the internal verify_PBMAC() in cmp_vfy.c.
@@ -317,4 +317,4 @@ int ossl_cmp_msg_protect(OSSL_CMP_CTX *ctx, OSSL_CMP_MSG *msg)
     return 0;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */

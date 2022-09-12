@@ -11,7 +11,7 @@
 #include <openssl/err.h>
 #include <openssl/httperr.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 #ifndef OPENSSL_NO_ERR
 
@@ -85,4 +85,4 @@ int ossl_err_load_HTTP_strings(void)
     return 1;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */

@@ -14,7 +14,7 @@
 
 #ifndef OPENSSL_NO_CMP
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+# if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 # ifndef OPENSSL_NO_ERR
 
@@ -179,7 +179,7 @@ int ossl_err_load_CMP_strings(void)
     return 1;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+# endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */
 
 #else
 NON_EMPTY_TRANSLATION_UNIT

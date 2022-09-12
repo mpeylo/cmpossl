@@ -24,7 +24,7 @@
 # include <openssl/x509.h>
 # include <openssl/x509v3.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+# if OPENSSL_VERSION_NUMBER <= 0x30100000L
 
 /*-
  * EncryptedValue ::= SEQUENCE {
@@ -62,7 +62,7 @@ struct ossl_crmf_encryptedvalue_st {
  *       -- encryptedContentInfo encryptedContent OCTET STRING.
  */
 
-#define OSSL_CRMF_ENCRYPTEDKEY_ENVELOPEDDATA 1
+# define OSSL_CRMF_ENCRYPTEDKEY_ENVELOPEDDATA 1
 
 typedef struct ossl_crmf_encryptedkey_st {
     int type;
@@ -404,6 +404,6 @@ struct ossl_crmf_msg_st {
     STACK_OF(OSSL_CRMF_ATTRIBUTETYPEANDVALUE) *regInfo;
 } /* OSSL_CRMF_MSG */;
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
+# endif /* OPENSSL_VERSION_NUMBER <= 0x30100000L */
 
 #endif /* !defined(OSSL_CRYPTO_CRMF_LOCAL_H) */
