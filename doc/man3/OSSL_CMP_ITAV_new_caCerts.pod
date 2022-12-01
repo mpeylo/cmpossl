@@ -7,7 +7,9 @@ OSSL_CMP_ITAV_get0_caCerts,
 OSSL_CMP_ITAV_new_rootCaCert,
 OSSL_CMP_ITAV_get0_rootCaCert,
 OSSL_CMP_ITAV_new_rootCaKeyUpdate,
-OSSL_CMP_ITAV_get0_rootCaKeyUpdate
+OSSL_CMP_ITAV_get0_rootCaKeyUpdate,
+OSSL_CMP_ITAV_new0_certReqTemplate,
+OSSL_CMP_ITAV_get1_certReqTemplate
 - CMP utility functions for handling specific genm and genp messages
 
 =head1 SYNOPSIS
@@ -26,6 +28,12 @@ OSSL_CMP_ITAV_get0_rootCaKeyUpdate
                                         X509 **newWithNew,
                                         X509 **newWithOld,
                                         X509 **oldWithNew);
+ OSSL_CMP_ITAV
+ *OSSL_CMP_ITAV_new0_certReqTemplate(OSSL_CRMF_CERTTEMPLATE *certTemplate,
+                                     STACK_OF(OSSL_CMP_ATAV) *keySpec);
+ int OSSL_CMP_ITAV_get1_certReqTemplate(const OSSL_CMP_ITAV *itav,
+                                        OSSL_CRMF_CERTTEMPLATE **certTemplate,
+                                        STACK_OF(OSSL_CMP_ATAV) **keySpec);
 
 =head1 DESCRIPTION
 
@@ -65,18 +73,39 @@ to the certificate contained in the oldWithNew field.
 Each of these two pointers will be NULL if no root CA key update value
 is in I<itav> or the respective field is not present.
 
+OSSL_CMP_ITAV_new0_certReqTemplate() creates an B<OSSL_CMP_ITAV> structure
+of type B<certReqTemplate>.
+If I<certTemplate> is NULL then also I<keySpec> must be NULL,
+and the resulting ITAV can be used in a B<genm> message to obtain the
+requirements a PKI has on the certificate template used to request certificates,
+or in a B<genp> message stating that there are no such requirements.
+Otherwise the resulting ITAV includes a CertReqTemplateValue structure
+with I<certTemplate> of type B<OSSL_CRMF_CERTTEMPLATE> and an optional list
+of key specifications I<keySpec>, each being of type B<OSSL_CMP_ATAV>, and
+the resulting ATAV can be used in a B<genp> message to provide requirements.
+
+OSSL_CMP_ITAV_get1_certReqTemplate()
+requires that I<itav> has type B<certReqTemplate>.
+If assigns NULL to I<*certTemplate> if no B<OSSL_CRMF_CERTTEMPLATE> structure
+with a certificate template value is in I<itav>,
+otherwise a copy of the certTemplate field value.
+If I<keySpec> is not NULL, it is assigned NULL
+if the structure is not present in I<itav> or the keySpec field is absent.
+Otherwise, the function checks that all elements of keySpec field are of type
+B<algId> or B<rsaKeyLen> and assigns to I<*keySpec> a copy of the keySpec field.
+
 =head1 NOTES
 
 CMP is defined in RFC 4210.
 
 =head1 RETURN VALUES
 
-OSSL_CMP_ITAV_new_caCerts(),
-OSSL_CMP_ITAV_new_rootCaCert(), OSSL_CMP_ITAV_new_rootCaKeyUpdate(),
+OSSL_CMP_ITAV_new_caCerts(), OSSL_CMP_ITAV_new_rootCaCert(),
+OSSL_CMP_ITAV_new_rootCaKeyUpdate(), and OSSL_CMP_ITAV_new0_certReqTemplate()
 return a pointer to the new ITAV structure on success, or NULL on error.
 
-OSSL_CMP_ITAV_get0_caCerts(),
-OSSL_CMP_ITAV_get0_rootCaCert(), OSSL_CMP_ITAV_get0_rootCaKeyUpdate(),
+OSSL_CMP_ITAV_get0_caCerts(), OSSL_CMP_ITAV_get0_rootCaCert(),
+OSSL_CMP_ITAV_get0_rootCaKeyUpdate(), and OSSL_CMP_ITAV_get1_certReqTemplate()
 return 1 on success, 0 on error.
 
 =head1 SEE ALSO
@@ -88,6 +117,7 @@ L<OSSL_CMP_ITAV_create(3)> and L<OSSL_CMP_ITAV_get0_type(3)>
 OSSL_CMP_ITAV_new_caCerts(), OSSL_CMP_ITAV_get0_caCerts(),
 OSSL_CMP_ITAV_new_rootCaCert(), OSSL_CMP_ITAV_get0_rootCaCert(),
 OSSL_CMP_ITAV_new_rootCaKeyUpdate(), OSSL_CMP_ITAV_get0_rootCaKeyUpdate(),
+OSSL_CMP_ITAV_new0_certReqTemplate() and OSSL_CMP_ITAV_get1_certReqTemplate()
 were added in OpenSSL 3.2.
 
 =head1 COPYRIGHT

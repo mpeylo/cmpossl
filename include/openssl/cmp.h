@@ -280,6 +280,16 @@ SKM_DEFINE_STACK_OF_INTERNAL(OSSL_CMP_ITAV, OSSL_CMP_ITAV, OSSL_CMP_ITAV)
 #define sk_OSSL_CMP_ITAV_deep_copy(sk, copyfunc, freefunc) ((STACK_OF(OSSL_CMP_ITAV) *)OPENSSL_sk_deep_copy(ossl_check_const_OSSL_CMP_ITAV_sk_type(sk), ossl_check_OSSL_CMP_ITAV_copyfunc_type(copyfunc), ossl_check_OSSL_CMP_ITAV_freefunc_type(freefunc)))
 #define sk_OSSL_CMP_ITAV_set_cmp_func(sk, cmp) ((sk_OSSL_CMP_ITAV_compfunc)OPENSSL_sk_set_cmp_func(ossl_check_OSSL_CMP_ITAV_sk_type(sk), ossl_check_OSSL_CMP_ITAV_compfunc_type(cmp)))
 
+#  define CMP_R_INVALID_KEYSPEC 246    
+typedef OSSL_CRMF_ATTRIBUTETYPEANDVALUE OSSL_CMP_ATAV;
+#  define OSSL_CMP_ATAV_dup OSSL_CRMF_ATTRIBUTETYPEANDVALUE_dup
+#  define OSSL_CMP_ATAV_free OSSL_CRMF_ATTRIBUTETYPEANDVALUE_free
+typedef STACK_OF(OSSL_CMP_ATAV) STACK_OF_OSSL_CMP_ATAV;    
+#  define stack_st_OSSL_CMP_ATAV stack_st_OSSL_CRMF_ATTRIBUTETYPEANDVALUE
+#  define sk_OSSL_CMP_ATAV_num sk_OSSL_CRMF_ATTRIBUTETYPEANDVALUE_num
+#  define sk_OSSL_CMP_ATAV_value sk_OSSL_CRMF_ATTRIBUTETYPEANDVALUE_value
+#  define sk_OSSL_CMP_ATAV_pop_free sk_OSSL_CRMF_ATTRIBUTETYPEANDVALUE_pop_free
+
 typedef struct ossl_cmp_revrepcontent_st OSSL_CMP_REVREPCONTENT;
 typedef struct ossl_cmp_pkisi_st OSSL_CMP_PKISI;
 DECLARE_ASN1_FUNCTIONS(OSSL_CMP_PKISI)
@@ -401,6 +411,25 @@ int OSSL_CMP_ITAV_get0_rootCaKeyUpdate(const OSSL_CMP_ITAV *itav,
                                        X509 **newWithNew,
                                        X509 **newWithOld,
                                        X509 **oldWithNew);
+OSSL_CMP_ITAV
+*OSSL_CMP_ITAV_new0_certReqTemplate(OSSL_CRMF_CERTTEMPLATE *certTemplate,
+                                    STACK_OF_OSSL_CMP_ATAV *keySpec);
+int OSSL_CMP_ITAV_get1_certReqTemplate(const OSSL_CMP_ITAV *itav,
+                                       OSSL_CRMF_CERTTEMPLATE **certTemplate,
+                                       STACK_OF_OSSL_CMP_ATAV **keySpec);
+
+OSSL_CMP_ATAV *OSSL_CMP_ATAV_create(ASN1_OBJECT *type, ASN1_TYPE *value);
+void OSSL_CMP_ATAV_set0(OSSL_CMP_ATAV *itav, ASN1_OBJECT *type,
+                        ASN1_TYPE *value);
+ASN1_OBJECT *OSSL_CMP_ATAV_get0_type(const OSSL_CMP_ATAV *itav);
+OSSL_CMP_ATAV *OSSL_CMP_ATAV_new_algId(const X509_ALGOR *alg);
+X509_ALGOR *OSSL_CMP_ATAV_get0_algId(const OSSL_CMP_ATAV *atav);
+OSSL_CMP_ATAV *OSSL_CMP_ATAV_new_rsaKeyLen(int len);
+int OSSL_CMP_ATAV_get_rsaKeyLen(const OSSL_CMP_ATAV *atav);
+ASN1_TYPE *OSSL_CMP_ATAV_get0_value(const OSSL_CMP_ATAV *itav);
+int OSSL_CMP_ATAV_push0_stack_item(STACK_OF(OSSL_CMP_ATAV) **itav_sk_p,
+                                   OSSL_CMP_ATAV *itav);
+void OSSL_CMP_ATAV_free(OSSL_CMP_ATAV *itav);
 
 void OSSL_CMP_MSG_free(OSSL_CMP_MSG *msg);
 

@@ -460,6 +460,7 @@ STACK_OF(X509) *X509_build_chain(X509 *target, STACK_OF(X509) *certs,
 #  define ASN1_item_i2d_bio(it, res, val) \
     ASN1_item_i2d_bio(it, res, (ASN1_VALUE *)(val)) /* hack */
 #  define ASN1_VALUE_dup(a) ASN1_VALUE_dup((ASN1_VALUE *)(a)) /* hack */
+#  define X509_ALGOR_dup(x) X509_ALGOR_dup((X509_ALGOR *)(x)) /* hack */
 #  define X509_dup(x) X509_dup((X509 *)(x)) /* hack */
 #  define X509_REQ_dup(r) X509_REQ_dup((X509_REQ *)(r)) /* hack */
 #  define X509_NAME_dup(n) X509_NAME_dup((X509_NAME *)(n)) /* hack */

@@ -99,7 +99,7 @@ override LDLIBS  += -lcrypto
 
 LIBCMP_HDRS_= cmp_util.h cmp.h cmperr.h crmf.h crmferr.h http.h httperr.h \
   safestack_backport.h openssl_backport.h cryptoerr_legacy.h
-LIBCMP_HDRS_INTERNAL_ = sizes.h constant_time.h cryptlib.h sockets.h common.h nelem.h e_os.h
+LIBCMP_HDRS_INTERNAL_ = sizes.h constant_time.h cryptlib.h sockets.h common.h nelem.h e_os.h crmf.h
 LIBCMP_INC_HDRS          = $(patsubst %,$(LIBCMP_INC)/openssl/%,$(LIBCMP_HDRS_))
 LIBCMP_INC_HDRS_INTERNAL = $(patsubst %,$(LIBCMP_INC)/internal/%,$(LIBCMP_HDRS_INTERNAL_))
 CMP_SRCS_ = cmp_asn.c cmp_ctx.c cmp_err.c cmp_http.c cmp_hdr.c cmp_msg.c cmp_protect.c cmp_client.c cmp_server.c cmp_status.c cmp_vfy.c cmp_util.c openssl_backport.c
