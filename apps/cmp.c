@@ -86,6 +86,7 @@ static char *opt_srvcert = NULL;
 static char *opt_expect_sender = NULL;
 static int opt_ignore_keyusage = 0;
 static int opt_unprotected_errors = 0;
+static int opt_no_cache_extracerts = 0;
 static char *opt_srvcertout = NULL;
 static char *opt_extracertsout = NULL;
 static char *opt_cacertsout = NULL;
@@ -221,7 +222,7 @@ typedef enum OPTION_choice {
 
     OPT_TRUSTED, OPT_UNTRUSTED, OPT_SRVCERT,
     OPT_EXPECT_SENDER,
-    OPT_IGNORE_KEYUSAGE, OPT_UNPROTECTED_ERRORS,
+    OPT_IGNORE_KEYUSAGE, OPT_UNPROTECTED_ERRORS, OPT_NO_CACHE_EXTRACERTS,
     OPT_SRVCERTOUT, OPT_EXTRACERTSOUT, OPT_CACERTSOUT,
 
     OPT_REF, OPT_SECRET, OPT_CERT, OPT_OWN_TRUSTED, OPT_KEY, OPT_KEYPASS,
@@ -392,6 +393,8 @@ const OPTIONS cmp_options[] = {
      "certificate responses (ip/cp/kup), revocation responses (rp), and PKIConf"},
     {OPT_MORE_STR, 0, 0,
      "WARNING: This setting leads to behavior allowing violation of RFC 4210"},
+    {"no_cache_extracerts", OPT_NO_CACHE_EXTRACERTS, '-',
+     "Do not keep certificates received in the extraCerts CMP message field"},
     { "srvcertout", OPT_SRVCERTOUT, 's',
       "File to save the server cert used and validated for CMP response protection"},
     {"extracertsout", OPT_EXTRACERTSOUT, 's',
@@ -582,6 +585,7 @@ static varref cmp_vars[] = { /* must be in same order as enumerated above! */
     {&opt_trusted}, {&opt_untrusted}, {&opt_srvcert},
     {&opt_expect_sender},
     {(char **)&opt_ignore_keyusage}, {(char **)&opt_unprotected_errors},
+    {(char **)&opt_no_cache_extracerts},
     {&opt_srvcertout}, {&opt_extracertsout}, {&opt_cacertsout},
 
     {&opt_ref}, {&opt_secret},
@@ -2503,6 +2507,9 @@ static int get_opts(int argc, char **argv)
         case OPT_UNPROTECTED_ERRORS:
             opt_unprotected_errors = 1;
             break;
+        case OPT_NO_CACHE_EXTRACERTS:
+            opt_no_cache_extracerts = 1;
+            break;
         case OPT_SRVCERTOUT:
             opt_srvcertout = opt_str();
             break;
@@ -2964,6 +2971,9 @@ int cmp_main(int argc, char **argv)
 
     if (opt_ignore_keyusage)
         (void)OSSL_CMP_CTX_set_option(cmp_ctx, OSSL_CMP_OPT_IGNORE_KEYUSAGE, 1);
+    if (opt_no_cache_extracerts)
+        (void)OSSL_CMP_CTX_set_option(cmp_ctx, OSSL_CMP_OPT_NO_CACHE_EXTRACERTS,
+                                      1);
 
     if (opt_use_mock_srv
 #ifndef OPENSSL_NO_SOCK
