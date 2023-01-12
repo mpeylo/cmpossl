@@ -117,7 +117,7 @@ int ossl_err_load_CMP_strings(void);
 
 # include <openssl/safestack.h>
 # if OPENSSL_VERSION_NUMBER >= 0x10101000L || defined(CMP_STANDALONE)
-#  include <openssl/crmferr.h>
+#  include "crmferr.h"
 # endif
 # ifndef  DECLARE_ASN1_DUP_FUNCTION
 #  define DECLARE_ASN1_DUP_FUNCTION(type) \
@@ -179,7 +179,7 @@ int X509_STORE_add_cert_dups(X509_STORE *ctx, X509 *x);
 #  include <openssl/err.h>
 # endif
 # if OPENSSL_VERSION_NUMBER >= 0x10101000L || defined(CMP_STANDALONE)
-#  include <openssl/cmperr.h>
+#  include "cmperr.h"
 # endif
 
 # if OPENSSL_VERSION_NUMBER < 0x10101000L

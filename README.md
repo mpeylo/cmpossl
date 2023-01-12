@@ -131,7 +131,7 @@ The result is in, for instance, `./libcmp.so.1`.
 ## Using the library in own applications
 
 For compiling applications using the library,
-you will need to add the directory [`include_cmp`](include/)
+you will need to add the directory [`include/cmp`](include/cmp/)
 to your C headers path.
 
 For linking you will need to refer the linker to the library, e.g., `-lcmp`

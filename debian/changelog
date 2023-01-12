@@ -1,3 +1,9 @@
+libcmp (2.0) stable; urgency=medium
+
+  * Include most features of CMP v2+
+
+ -- David von Oheimb <David.von.Oheimb@siemens.com>  Thu, 12 Jan 2023 21:51:19 +0100
+
 libcmp (1.0) stable; urgency=medium
 
   * Initial release

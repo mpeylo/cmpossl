@@ -4,7 +4,7 @@ project(cmp)
 
 find_package(OpenSSL REQUIRED)
 
-set(LIBCMP_INC ${PROJECT_SOURCE_DIR}/include_cmp)
+set(LIBCMP_INC ${PROJECT_SOURCE_DIR}/include/cmp)
 set(LIBCMP_INTERNAL_INC ${PROJECT_SOURCE_DIR}/crypto/cmp)
 
 if(NOT DEFINED CMP_VERSION )

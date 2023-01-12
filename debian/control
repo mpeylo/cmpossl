@@ -2,9 +2,9 @@ Source: libcmp
 Section: libs
 Priority: optional
 Maintainer: David von Oheimb <David.von.Oheimb@siemens.com>
-Standards-Version: 4.5.1
 Build-Depends: libssl-dev, pkg-config, debhelper (>= 9)
 Homepage: https://github.com/mpeylo/cmpossl
+Standards-Version: 4.5.1
 
 Package: libcmp
 Architecture: any
@@ -16,6 +16,6 @@ Package: libcmp-dev
 Section: libdevel
 Architecture: all
 Multi-Arch: foreign
-Depends: libcmp, libssl-dev, ${misc:Depends}
+Depends: libcmp (>= 2.0), libssl-dev, ${misc:Depends}
 Description: libcmp C headers
  Only needed for development

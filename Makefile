@@ -1,6 +1,6 @@
 #!/bin/make
 # Optional OUT_DIR defines where the resulting cmp lib will be placed (default: ".").
-# Optional LIBCMP_INC defines where the libcmp header files will be placed (default: "OUT_DIR/include_cmp").
+# Optional LIBCMP_INC defines where the libcmp header files will be placed (default: "OUT_DIR/include/cmp").
 # Optional OPENSSL_DIR defines where to find the OpenSSL installation (default: "/usr" or ".").
 # All these paths may be absolute or relative to the dir containing this Makefile.
 # Optional DEBUG_FLAGS may set to prepend to local CFLAGS and LDFLAGS (default see below).
@@ -21,7 +21,7 @@ endif
 
 ROOTFS ?= $(DESTDIR)$(prefix)
 
-VERSION=1.0
+VERSION=2.0
 # must be kept in sync with latest version in debian/changelog
 # PACKAGENAME=libcmp
 # DIRNAME=$(PACKAGENAME)-$(VERSION)
@@ -54,17 +54,20 @@ endif
 
 MAKECMDGOALS ?= default
 ifneq ($(filter-out doc update install uninstall clean clean_install clean_deb,$(MAKECMDGOALS)),)
-OPENSSL_VERSION=$(shell $(MAKE) -s --no-print-directory -f OpenSSL_version.mk LIB=h OPENSSL_DIR="$(OPENSSL_DIR)")
-ifeq ($(OPENSSL_VERSION),)
-    $(warning cannot determine version of OpenSSL in directory '$(OPENSSL_DIR)', assuming 1.1.1)
-    OPENSSL_VERSION=1.1.1
-endif
-$(info detected OpenSSL version $(OPENSSL_VERSION).x)
-OSSL_VERSION_QUIRKS=-D'DEPRECATEDIN_1_2_0(f)= ' # needed for 1.2
-ifeq ($(shell expr "$(OPENSSL_VERSION)" \< 1.1),1) # same as comparing == 1.0
-    $(info enabling compilation quirks for OpenSSL 1.0.2)
-    OSSL_VERSION_QUIRKS+=-Wno-discarded-qualifiers -Wno-unused-parameter #-Wno-unused-function #-D'DEPRECATEDIN_1_1_0(f)=f;' -D'DEPRECATEDIN_1_0_0(f)='
-endif
+    ifeq (,$(wildcard $(OPENSSL_DIR)/include/openssl))
+        $(error cannot find directory '$(OPENSSL_DIR)/include/openssl', check OPENSSL_DIR variable)
+    endif
+    OPENSSL_VERSION=$(shell $(MAKE) -s --no-print-directory -f OpenSSL_version.mk LIB=h OPENSSL_DIR="$(OPENSSL_DIR)")
+    ifeq ($(OPENSSL_VERSION),)
+        $(warning cannot determine version of OpenSSL in directory '$(OPENSSL_DIR)', assuming 1.1.1)
+        OPENSSL_VERSION=1.1.1
+    endif
+    $(info detected OpenSSL version $(OPENSSL_VERSION).x)
+    OSSL_VERSION_QUIRKS=-D'DEPRECATEDIN_1_2_0(f)= ' # needed for 1.2
+    ifeq ($(shell expr "$(OPENSSL_VERSION)" \< 1.1),1) # same as comparing == 1.0
+        $(info enabling compilation quirks for OpenSSL 1.0.2)
+        OSSL_VERSION_QUIRKS+=-Wno-discarded-qualifiers -Wno-unused-parameter #-Wno-unused-function #-D'DEPRECATEDIN_1_1_0(f)=f;' -D'DEPRECATEDIN_1_0_0(f)='
+    endif
 endif
 
 .phony: default
@@ -75,7 +78,7 @@ update:
 	git fetch
 	git rebase origin
 
-LIBCMP_INC ?= $(OUT_DIR)/include_cmp
+LIBCMP_INC ?= $(OUT_DIR)/include/cmp
 OUTLIB=libcmp$(DLL)
 
 CC ?= gcc
@@ -86,8 +89,8 @@ else
     DEBUG_FLAGS ?= -g -O0 -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all # not every compiler(version) supports -Og
 endif
 override CFLAGS += $(DEBUG_FLAGS) -fPIC -DDEBUG_UNUSED -DPEDANTIC -pedantic -Wall -Wextra -Wswitch -Wsign-compare -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wformat -Wtype-limits -Wundef $(OSSL_VERSION_QUIRKS)# -Werror # not needed for cmp+crmf: -Wno-long-long -Wno-missing-field-initializers
+override CFLAGS += -isystem $(LIBCMP_INC) # important for taking precedence over any (older) OpenSSL CMP headers
 override CFLAGS += -isystem $(OPENSSL_DIR)/include # use of -isystem is critical for selecting wanted OpenSSL version
-override CFLAGS += -I$(LIBCMP_INC)
 #LIBCMP_HDRS_INC = -include $(LIBCMP_INC)/openssl/crmf.h # used to force inclusion of standalone version, needed also for cmp_err.c
 LIBCMP_HDRS_INC = -include $(LIBCMP_INC)/openssl/openssl_backport.h # used to force inclusion of standalone version
 
@@ -139,14 +142,14 @@ $(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIB).$(VERSION)
 
 clean: clean_deb
 	rm -f $(LIBCMP_INC)/openssl/* $(LIBCMP_INC)/internal/*
-	rmdir $(LIBCMP_INC)/openssl $(LIBCMP_INC)/internal || true
-	rm -f $(OUT_DIR)/$(OUTLIB)*
 	rmdir $(LIBCMP_INC)/openssl $(LIBCMP_INC)/internal $(LIBCMP_INC) 2>/dev/null || true
+	rm -f $(OUT_DIR)/$(OUTLIB)*
 
 SYSTEM_LIB=/usr/lib
+SYSTEM_INCLUDE=/usr/include
 DEST_LIB=$(ROOTFS)$(SYSTEM_LIB)
-DEST_INC=$(ROOTFS)$(SYSTEM_INCLUDE_OPENSSL)
-DEST_DOC=$(ROOTFS)/usr/share/doc/libcmp-dev# TODO improve
+DEST_INC=$(ROOTFS)$(SYSTEM_INCLUDE)/cmp
+DEST_DOC=$(ROOTFS)/usr/share/doc/libcmp-dev # TODO improve
 LIBCMP_HDRS_install = $(patsubst %,$(DEST_INC)/%,$(LIBCMP_HDRS_))
 LIBCMP_DOCS_ = $(wildcard doc/man3/*.pod)
 LIBCMP_DOCS_install = $(patsubst doc/man3/%,$(DEST_DOC)/%,$(LIBCMP_DOCS_))
@@ -157,8 +160,10 @@ install: # $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	install -D $(OUT_DIR)/$(OUTLIB).$(VERSION) $(DEST_LIB)/$(OUTLIB).$(VERSION)
 	ln -sf $(OUTLIB).$(VERSION) $(DEST_LIB)/$(OUTLIB)
 #install_headers:
-	mkdir -p $(DEST_INC)
-	install -D $(LIBCMP_INC)/openssl/*.h $(DEST_INC)
+	mkdir -p $(DEST_INC)/openssl
+	install -D $(LIBCMP_INC)/openssl/*.h $(DEST_INC)/openssl
+	mkdir -p $(DEST_INC)/internal
+	install -D $(LIBCMP_INC)/internal/*.h $(DEST_INC)/internal
 #install_doc:
 	mkdir -p $(DEST_DOC)
 	install -D $(LIBCMP_DOCS_) $(DEST_DOC)
