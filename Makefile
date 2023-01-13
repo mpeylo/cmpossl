@@ -53,7 +53,7 @@ else
 endif
 
 MAKECMDGOALS ?= default
-ifneq ($(filter-out doc update install uninstall clean clean_install clean_deb,$(MAKECMDGOALS)),)
+ifneq ($(filter-out doc update uninstall clean clean_install clean_deb,$(MAKECMDGOALS)),)
     ifeq (,$(wildcard $(OPENSSL_DIR)/include/openssl))
         $(error cannot find directory '$(OPENSSL_DIR)/include/openssl', check OPENSSL_DIR variable)
     endif
@@ -138,7 +138,7 @@ $(OUT_DIR)/$(OUTLIB).$(VERSION): $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL) 
 	$(CC) -DCMP_STANDALONE $(CFLAGS) $(LIBCMP_HDRS_INC) $(LIBCMP_SRCS) $(LDFLAGS) $(LDLIBS) -shared -o $@ -Wl,-soname,$(OUTLIB).$(VERSION)
 
 $(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIB).$(VERSION)
-	ln -sf $(OUTLIB).$(VERSION) $(OUT_DIR)/$(OUTLIB)
+	ln -sfr $(OUT_DIR)/$(OUTLIB){.$(VERSION),}
 
 clean: clean_deb
 	rm -f $(LIBCMP_INC)/openssl/* $(LIBCMP_INC)/internal/*
@@ -156,9 +156,9 @@ LIBCMP_DOCS_install = $(patsubst doc/man3/%,$(DEST_DOC)/%,$(LIBCMP_DOCS_))
 
 .phony: install uninstall clean_install
 
-install: # $(OUT_DIR)/$(OUTLIB).$(VERSION)
+install: $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	install -D $(OUT_DIR)/$(OUTLIB).$(VERSION) $(DEST_LIB)/$(OUTLIB).$(VERSION)
-	ln -sf $(OUTLIB).$(VERSION) $(DEST_LIB)/$(OUTLIB)
+	ln -sfr $(DEST_LIB)/$(OUTLIB){.$(VERSION),}
 #install_headers:
 	mkdir -p $(DEST_INC)/openssl
 	install -D $(LIBCMP_INC)/openssl/*.h $(DEST_INC)/openssl
@@ -169,6 +169,7 @@ install: # $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	install -D $(LIBCMP_DOCS_) $(DEST_DOC)
 
 clean_install:
+	rm -fr $(DEST_INC)
 	rm -f $(DEST_LIB)/$(OUTLIB)*
 	rm -f $(LIBCMP_HDRS_install)
 	rm -f $(LIBCMP_DOCS_install)
