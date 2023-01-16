@@ -1,0 +1,32 @@
+# GitHub Actions for cmpossl
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Siemens AG, 2021-2023
+
+name: CI
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: build
+        run: |
+          # would need access to azure.archive.ubuntu.com:
+          # sudo apt-get update
+          # sudo apt-get install -y >/dev/null libssl-dev build-essential # not needed
+          make
+          make clean
+          make build
+
+  deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: deb
+        run: |
+          # needs access to azure.archive.ubuntu.com:
+          sudo apt-get update
+          sudo apt-get install -y >/dev/null debhelper devscripts
+          make deb
