@@ -50,11 +50,11 @@ The following network and development tools are needed or recommended.
 The following OSS components are used.
 * OpenSSL development edition (tested with versions 1.0.2, 1.1.0, 1.1.1, 3.0)
 
-For instance, on a Debian system these may be installed simply as follows:
+For instance, on a Debian system the prerequisites may be installed simply as follows:
 ```
-sudo apt install libssl-dev
+sudo apt install libssl-dev libc-dev linux-libc-dev
 ```
-while `apt install wget git make gcc` usually is not needed as far as these tools are pre-installed.
+while `apt install git make gcc` usually is not needed as far as these tools are pre-installed.
 
 As a sanity check you can execute in a shell:
 ```
@@ -152,7 +152,8 @@ This repository can build two Debian packages.
 * `libcmp-dev` - development headers
 
 To build the Debian packages, the following dependencies need to be installed:
-* `debhelper`
+* `debhelper` (needed for `dh`)
+* `devscripts` (needed for `debuild`)
 * `libssl-dev`
 
 Then the packages can be built by
