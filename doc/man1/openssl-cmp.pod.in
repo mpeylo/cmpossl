@@ -429,7 +429,8 @@ if B<-cert> and B<-oldcert> are not given.
 
 =item B<-out_trusted> I<filenames>
 
-Trusted certificate(s) to use for verifying the newly enrolled certificate.
+Trusted certificate(s) to use for validating the newly enrolled certificate.
+During this verification, any certificate status checking is disabled.
 
 Multiple filenames may be given, separated by commas and/or whitespace
 (where in the latter case the whole argument must be enclosed in "...").

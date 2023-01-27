@@ -626,11 +626,11 @@ int OSSL_CMP_certConf_cb(OSSL_CMP_CTX *ctx, X509 *cert, int fail_info,
         X509_free(sk_X509_shift(chain)); /* remove leaf (EE) cert */
     if (out_trusted != NULL) {
         if (chain == NULL) {
-            ossl_cmp_err(ctx, "failed building chain for newly enrolled cert");
+            ossl_cmp_err(ctx, "failed to validate newly enrolled cert");
             fail_info = 1 << OSSL_CMP_PKIFAILUREINFO_incorrectData;
         } else {
             ossl_cmp_debug(ctx,
-                           "succeeded building proper chain for newly enrolled cert");
+                           "success validating newly enrolled cert");
         }
     } else if (chain == NULL) {
         ossl_cmp_warn(ctx, "could not build approximate chain for newly enrolled cert, resorting to received extraCerts");
