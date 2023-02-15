@@ -823,8 +823,8 @@ int ossl_cmp_certstatus_set0_certHash(OSSL_CMP_CERTSTATUS *certStatus,
     return 1;
 }
 
-OSSL_CMP_MSG *ossl_cmp_certConf_new(OSSL_CMP_CTX *ctx, int fail_info,
-                                    const char *text)
+OSSL_CMP_MSG *ossl_cmp_certConf_new(OSSL_CMP_CTX *ctx, int certReqId,
+                                    int fail_info, const char *text)
 {
     OSSL_CMP_MSG *msg = NULL;
     OSSL_CMP_CERTSTATUS *certStatus = NULL;
@@ -833,7 +833,9 @@ OSSL_CMP_MSG *ossl_cmp_certConf_new(OSSL_CMP_CTX *ctx, int fail_info,
     ASN1_OCTET_STRING *certHash = NULL;
     OSSL_CMP_PKISI *sinfo;
 
-    if (!ossl_assert(ctx != NULL && ctx->newCert != NULL))
+    if (!ossl_assert(ctx != NULL && ctx->newCert != NULL
+                     && (certReqId == OSSL_CMP_CERTREQID
+                         || certReqId == OSSL_CMP_CERTREQID_NONE)))
         return NULL;
 
     if ((unsigned)fail_info > OSSL_CMP_PKIFAILUREINFO_MAX_BIT_PATTERN) {
@@ -849,9 +851,11 @@ OSSL_CMP_MSG *ossl_cmp_certConf_new(OSSL_CMP_CTX *ctx, int fail_info,
     /* consume certStatus into msg right away so it gets deallocated with msg */
     if (!sk_OSSL_CMP_CERTSTATUS_push(msg->body->value.certConf, certStatus))
         goto err;
+
     /* set the ID of the certReq */
-    if (!ASN1_INTEGER_set(certStatus->certReqId, OSSL_CMP_CERTREQID))
+    if (!ASN1_INTEGER_set(certStatus->certReqId, certReqId))
         goto err;
+
     certStatus->hashAlg = NULL;
     /*
      * The hash of the certificate, using the same hash algorithm
@@ -1005,12 +1009,12 @@ static int suitable_rid(const ASN1_INTEGER *certReqId, int rid)
 {
     int trid;
 
-    if (rid == -1)
+    if (rid == OSSL_CMP_CERTREQID_NONE)
         return 1;
 
     trid = ossl_cmp_asn1_get_int(certReqId);
 
-    if (trid == -1) {
+    if (trid == OSSL_CMP_CERTREQID_NONE) {
         ERR_raise(ERR_LIB_CMP, CMP_R_BAD_REQUEST_ID);
         return 0;
     }
