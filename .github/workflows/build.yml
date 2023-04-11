@@ -7,7 +7,7 @@ name: CI
 on: push
 
 jobs:
-  cmake
+  cmake:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

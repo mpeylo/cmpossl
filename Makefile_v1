@@ -1,9 +1,8 @@
 #!/usr/bin/make
 
 # Optional OUT_DIR defines where the resulting cmp lib will be placed (default: ".").
-# Optional LIBCMP_INC defines where the libcmp header files will be placed (default: "OUT_DIR/include/cmp").
 # Optional OPENSSL_DIR defines where to find the OpenSSL installation (default: "/usr" or ".").
-# All these paths may be absolute or relative to the dir containing this Makefile.
+# These paths may be absolute or relative to the dir containing this Makefile.
 # Optional DEBUG_FLAGS may set to prepend to local CFLAGS and LDFLAGS (default see below).
 
 SHELL=bash # This is needed for supporting extended file name globbing
@@ -79,7 +78,7 @@ update:
 	git fetch
 	git rebase origin
 
-LIBCMP_INC ?= $(OUT_DIR)/include/cmp
+LIBCMP_INC=include/cmp
 OUTLIB=libcmp$(DLL)
 
 CC ?= gcc
@@ -92,8 +91,7 @@ endif
 override CFLAGS += $(DEBUG_FLAGS) -fPIC -DDEBUG_UNUSED -DPEDANTIC -pedantic -Wall -Wextra -Wswitch -Wsign-compare -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wformat -Wtype-limits -Wundef $(OSSL_VERSION_QUIRKS)# -Werror # not needed for cmp+crmf: -Wno-long-long -Wno-missing-field-initializers
 override CFLAGS += -isystem $(LIBCMP_INC) # important for taking precedence over any (older) OpenSSL CMP headers
 override CFLAGS += -isystem $(OPENSSL_DIR)/include # use of -isystem is critical for selecting wanted OpenSSL version
-#LIBCMP_HDRS_INC = -include $(LIBCMP_INC)/openssl/crmf.h # used to force inclusion of standalone version, needed also for cmp_err.c
-LIBCMP_HDRS_INC = -include $(LIBCMP_INC)/openssl/openssl_backport.h # used to force inclusion of standalone version
+INCLUDE_OPENSSL_BACKPORT = -include $(LIBCMP_INC)/openssl/openssl_backport.h # used to force inclusion of standalone version
 
 override LDFLAGS += -L$(OPENSSL_LIB) -L$(OPENSSL)
 ifeq ($(DEB_TARGET_ARCH),) # not during Debian packaging
@@ -101,9 +99,6 @@ ifeq ($(DEB_TARGET_ARCH),) # not during Debian packaging
 endif
 override LDLIBS  += -lcrypto
 
-LIBCMP_HDRS_= cmp_util.h cmp.h cmperr.h crmf.h crmferr.h http.h httperr.h \
-  safestack_backport.h openssl_backport.h cryptoerr_legacy.h
-LIBCMP_HDRS_INTERNAL_ = sizes.h constant_time.h cryptlib.h sockets.h common.h nelem.h e_os.h crmf.h
 LIBCMP_INC_HDRS          = $(patsubst %,$(LIBCMP_INC)/openssl/%,$(LIBCMP_HDRS_))
 LIBCMP_INC_HDRS_INTERNAL = $(patsubst %,$(LIBCMP_INC)/internal/%,$(LIBCMP_HDRS_INTERNAL_))
 CMP_SRCS_ = cmp_asn.c cmp_ctx.c cmp_err.c cmp_http.c cmp_hdr.c cmp_msg.c cmp_protect.c cmp_client.c cmp_server.c cmp_status.c cmp_vfy.c cmp_util.c openssl_backport.c
@@ -119,29 +114,14 @@ $(OUT_DIR):
 	@mkdir -p $(OUT_DIR)
 build: $(OUT_DIR) $(OUT_DIR)/$(OUTLIB)
 
-$(LIBCMP_INC)/openssl:
-	@mkdir -p $(LIBCMP_INC)/openssl
-
-$(LIBCMP_INC)/internal:
-	@mkdir -p $(LIBCMP_INC)/internal
-
-$(LIBCMP_INC)/openssl/%.h: include/openssl/%.h | $(LIBCMP_INC)/openssl
-	@cp $< $@ # --preserve=timestamps has no effect on WSL   
-
-$(LIBCMP_INC)/internal/%.h: include/internal/%.h | $(LIBCMP_INC)/internal
-	@cp $< $@ # --preserve=timestamps has no effect on WSL   
-
 $(OUT_DIR)/$(OUTLIB).$(VERSION): $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL) $(LIBCMP_SRCS)
-	@ # cd $(LIBCMP_INC)/openssl && ((mv crmf.h tmp2.h && /bin/echo -e "#undef CMP_STANDALONE\n#define CMP_STANDALONE\n" >tmp1.h && cat tmp1.h tmp2.h >crmf.h && touch -r tmp2.h crmf.h); rm -f tmp1.h tmp2.h)
-	$(CC) -DCMP_STANDALONE $(CFLAGS) $(LIBCMP_HDRS_INC) $(LIBCMP_SRCS) $(LDFLAGS) $(LDLIBS) -shared -o $@ -Wl,-soname,$(OUTLIB).$(VERSION)
+	$(CC) -DCMP_STANDALONE $(CFLAGS) $(INCLUDE_OPENSSL_BACKPORT) $(LIBCMP_SRCS) $(LDFLAGS) $(LDLIBS) -shared -o $@ -Wl,-soname,$(OUTLIB).$(VERSION)
 
 $(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	ln -sfr $(OUT_DIR)/$(OUTLIB){.$(VERSION),}
 
 clean: clean_deb
 	rm -fr CMakeCache.txt *.cmake install_manifest.txt CMakeFiles/
-	rm -f $(LIBCMP_INC)/openssl/* $(LIBCMP_INC)/internal/*
-	rmdir $(LIBCMP_INC)/openssl $(LIBCMP_INC)/internal $(LIBCMP_INC) 2>/dev/null || true
 	rm -f $(OUT_DIR)/$(OUTLIB)*
 
 SYSTEM_LIB=/usr/lib
@@ -149,9 +129,7 @@ SYSTEM_INCLUDE=/usr/include
 DEST_LIB=$(ROOTFS)$(SYSTEM_LIB)
 DEST_INC=$(ROOTFS)$(SYSTEM_INCLUDE)/cmp
 DEST_DOC=$(ROOTFS)/usr/share/doc/libcmp-dev
-#LIBCMP_HDRS_install = $(patsubst %,$(DEST_INC)/%,$(LIBCMP_HDRS_))
 LIBCMP_DOCS_ = $(wildcard doc/man3/*.pod)
-#LIBCMP_DOCS_install = $(patsubst doc/man3/%,$(DEST_DOC)/%,$(LIBCMP_DOCS_))
 
 .phony: install uninstall clean_install
 
@@ -169,7 +147,6 @@ install: # $(OUT_DIR)/$(OUTLIB).$(VERSION)
 
 clean_install:
 	rm -f $(DEST_LIB)/$(OUTLIB)*
-	@ #rm -f $(LIBCMP_HDRS_install)
 	rm -rf $(DEST_INC)/{openssl,internal}
 	rmdir $(DEST_INC) || true
 	@ #rm -f $(LIBCMP_DOCS_install)
