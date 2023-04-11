@@ -34,7 +34,9 @@ DECLARE_ASN1_ITEM(CMS_EnvelopedData)
 DECLARE_ASN1_ALLOC_FUNCTIONS(CMS_SignedData)
 
 /* explicit #includes not strictly needed since implied by the above: */
-#  include <openssl/types.h>
+#  if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#   include <openssl/types.h>
+#  endif
 #  include <openssl/x509.h>
 
 #  ifdef __cplusplus

@@ -41,7 +41,7 @@
 IMPLEMENT_ASN1_DUP_FUNCTION(X509_PUBKEY)
 #endif
 
-#if OPENSSL_VERSION_NUMBER <= 0x30200000L
+#if OPENSSL_VERSION_NUMBER < 0x30200000L
 /*-
  * atyp = Attribute Type
  * valt = Value Type
@@ -631,6 +631,26 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
 
 
 #ifndef OPENSSL_NO_CMS
+#if OPENSSL_VERSION_NUMBER < 0x30200000L
+/* added to OpenSSL 3.1 in #18301 */
+BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
+                               EVP_PKEY *pkey, X509 *cert,
+                               ASN1_OCTET_STRING *secret, unsigned int flags,
+                               OSSL_LIB_CTX *libctx, const char *propq);
+IMPLEMENT_ASN1_ALLOC_FUNCTIONS(CMS_SignedData)
+/* added to OpenSSL 3.1 in #18667 */
+BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
+                           STACK_OF(X509) *scerts, X509_STORE *store,
+                           STACK_OF(X509) *extra, STACK_OF(X509_CRL) *crls,
+                           unsigned int flags,
+                           OSSL_LIB_CTX *libctx, const char *propq);
+#endif
+#endif /* OPENSSL_NO_CMS */
+#endif /* OPENSSL_VERSION_NUMBER < 0x30200000L */
+
+#ifndef OPENSSL_NO_CMS
+DECLARE_ASN1_ITEM(CMS_SignedData) /* copied from cms_local.h */
+
 /* check for KGA authorization implied by CA flag or by explicit EKU cmKGA */
 static int check_cmKGA(ossl_unused const X509_PURPOSE *purpose,
                        const X509 *x, int ca)
@@ -661,24 +681,7 @@ static int check_cmKGA(ossl_unused const X509_PURPOSE *purpose,
     sk_ASN1_OBJECT_pop_free(ekus, ASN1_OBJECT_free);
     return ret;
 }
-
-DECLARE_ASN1_ITEM(CMS_SignedData) /* copied from cms_local.h */
-
-#if OPENSSL_VERSION_NUMBER < 0x30200000L
-/* added to OpenSSL 3.1 in #18301 */
-BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
-                               EVP_PKEY *pkey, X509 *cert,
-                               ASN1_OCTET_STRING *secret, unsigned int flags,
-                               OSSL_LIB_CTX *libctx, const char *propq);
-IMPLEMENT_ASN1_ALLOC_FUNCTIONS(CMS_SignedData)
-/* added to OpenSSL 3.1 in #18667 */
-BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
-                           STACK_OF(X509) *scerts, X509_STORE *store,
-                           STACK_OF(X509) *extra, STACK_OF(X509_CRL) *crls,
-                           unsigned int flags,
-                           OSSL_LIB_CTX *libctx, const char *propq);
 #endif /* OPENSSL_NO_CMS */
-#endif
 
 EVP_PKEY
 *OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
@@ -875,6 +878,7 @@ unsigned char
     return NULL;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x30200000L
 /*-
  * Decrypts the certificate in the given encryptedValue using private key pkey.
  * This is needed for the indirect PoP method as in RFC 4210 section 5.2.8.2.
@@ -906,6 +910,7 @@ X509
     OPENSSL_free(buf);
     return cert;
 }
+#endif /* OPENSSL_VERSION_NUMBER < 0x30200000L */
 
 /*-
  * Decrypts the certificate in the given encryptedKey using private key pkey.
@@ -944,10 +949,9 @@ X509
     return NULL;
 #endif /* OPENSSL_NO_CMS */
 }
-
+#if OPENSSL_VERSION_NUMBER < 0x30200000L
 
 #ifndef OPENSSL_NO_CMS
-
 # if OPENSSL_VERSION_NUMBER <= 0x30200000L
 
 /* copied from crypto/cms/cms_local.h for being able to access */
@@ -1063,4 +1067,4 @@ BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
 
 # endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */
 #endif /* OPENSSL_NO_CMS */
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */
+#endif /* OPENSSL_VERSION_NUMBER < 0x30200000L */

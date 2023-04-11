@@ -27,7 +27,7 @@
 
 #include "crmf_local.h"
 
-#if OPENSSL_VERSION_NUMBER <= 0x30200000L
+#if OPENSSL_VERSION_NUMBER < 0x30200000L
 
 /*-
  * creates and initializes OSSL_CRMF_PBMPARAMETER (section 4.4)
