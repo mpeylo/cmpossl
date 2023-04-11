@@ -16,16 +16,19 @@
 
 # include <openssl/crmf.h>
 # include <openssl/cms.h> /* for CMS_EnvelopedData and CMS_SignedData */
+# if OPENSSL_VERSION_NUMBER < 0x30200000L
+DECLARE_ASN1_ITEM(CMS_SignedData)
+# endif
 # include <openssl/err.h>
 # include "internal/crmf.h" /* for ossl_crmf_attributetypeandvalue_st */
 
 /* explicit #includes not strictly needed since implied by the above: */
+# if OPENSSL_VERSION_NUMBER >= 0x30000000L
 # include <openssl/types.h>
+# endif
 # include <openssl/safestack.h>
 # include <openssl/x509.h>
 # include <openssl/x509v3.h>
-
-# if OPENSSL_VERSION_NUMBER <= 0x30200000L
 
 /*-
  * EncryptedValue ::= SEQUENCE {
@@ -65,13 +68,15 @@ struct ossl_crmf_encryptedvalue_st {
 
 # define OSSL_CRMF_ENCRYPTEDKEY_ENVELOPEDDATA 1
 
-typedef struct ossl_crmf_encryptedkey_st {
+struct ossl_crmf_encryptedkey_st {
     int type;
     union {
         OSSL_CRMF_ENCRYPTEDVALUE *encryptedValue; /* 0 */ /* Deprecated */
         CMS_EnvelopedData *envelopedData; /* 1 */
     } value;
-} OSSL_CRMF_ENCRYPTEDKEY;
+} /* OSSL_CRMF_ENCRYPTEDKEY */;
+
+# if OPENSSL_VERSION_NUMBER < 0x30200000L
 
 /*-
  *  Attributes ::= SET OF Attribute
@@ -298,6 +303,7 @@ typedef struct ossl_crmf_popo_st {
     } value;
 } OSSL_CRMF_POPO;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_POPO)
+#endif /* OPENSSL_VERSION_NUMBER < 0x30200000L */
 
 /*-
  * OptionalValidity ::= SEQUENCE {
@@ -356,6 +362,7 @@ struct ossl_crmf_certrequest_st {
 } /* OSSL_CRMF_CERTREQUEST */;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_CERTREQUEST)
 DECLARE_ASN1_DUP_FUNCTION(OSSL_CRMF_CERTREQUEST)
+#if OPENSSL_VERSION_NUMBER < 0x30200000L
 
 /* ossl_crmf_attributetypeandvalue_st decl is in include/internal/crmf.h */
 

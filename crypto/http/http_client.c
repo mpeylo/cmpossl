@@ -19,7 +19,9 @@
 #include <openssl/cmperr.h>
 #include <openssl/buffer.h>
 #include <openssl/http.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/trace.h>
+#endif
 #include "internal/sockets.h"
 #include "internal/common.h" /* for ossl_assert() */
 

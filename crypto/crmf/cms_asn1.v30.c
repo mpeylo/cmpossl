@@ -26,11 +26,11 @@
 typedef struct CMS_IssuerAndSerialNumber_st CMS_IssuerAndSerialNumber;
 typedef struct CMS_EncapsulatedContentInfo_st CMS_EncapsulatedContentInfo;
 typedef struct CMS_SignerIdentifier_st CMS_SignerIdentifier;
-typedef struct CMS_SignedData_st CMS_SignedData;
+/* typedef struct CMS_SignedData_st CMS_SignedData; */
 typedef struct CMS_OtherRevocationInfoFormat_st CMS_OtherRevocationInfoFormat;
 typedef struct CMS_OriginatorInfo_st CMS_OriginatorInfo;
 typedef struct CMS_EncryptedContentInfo_st CMS_EncryptedContentInfo;
-typedef struct CMS_EnvelopedData_st CMS_EnvelopedData;
+/* typedef struct CMS_EnvelopedData_st CMS_EnvelopedData; */
 typedef struct CMS_DigestedData_st CMS_DigestedData;
 typedef struct CMS_EncryptedData_st CMS_EncryptedData;
 typedef struct CMS_AuthenticatedData_st CMS_AuthenticatedData;
@@ -505,7 +505,7 @@ DECLARE_ASN1_ITEM(CMS_RevocationInfoChoice)
 DECLARE_ASN1_ITEM(CMS_SignedData)
 DECLARE_ASN1_ITEM(CMS_CompressedData)
 
-#endif
+#endif /* ndef OSSL_CRYPTO_CMS_LOCAL_H */
 
 
 ASN1_SEQUENCE(CMS_IssuerAndSerialNumber) = {

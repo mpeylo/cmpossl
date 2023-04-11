@@ -16,8 +16,10 @@
 # include <openssl/opensslconf.h>
 # ifndef OPENSSL_NO_CMP
 
+#  if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #  include <openssl/macros.h>
 #  include <openssl/trace.h>
+#  endif
 
 #  ifdef __cplusplus
 extern "C" {

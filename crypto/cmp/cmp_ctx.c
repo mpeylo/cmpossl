@@ -9,7 +9,9 @@
  * https://www.openssl.org/source/license.html
  */
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/trace.h>
+#endif
 #include <openssl/bio.h>
 #include <openssl/ocsp.h> /* for OCSP_REVOKED_STATUS_* */
 
