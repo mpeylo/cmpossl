@@ -210,7 +210,7 @@ typedef enum OPTION_choice {
     OPT_OUT_TRUSTED, OPT_IMPLICIT_CONFIRM, OPT_DISABLE_CONFIRM,
     OPT_CERTOUT, OPT_CHAINOUT,
 
-    OPT_OLDCERT, OPT_REVREASON,
+    OPT_OLDCERT, OPT_REVREASON, OPT_SERIALNUMBER,
 
 #ifndef OPENSSL_NO_SOCK
     OPT_SERVER, OPT_PROXY, OPT_NO_PROXY,
@@ -296,6 +296,8 @@ const OPTIONS cmp_options[] = {
      "DN of the issuer to place in the requested certificate template"},
     {OPT_MORE_STR, 0, 0,
      "also used as recipient if neither -recipient nor -srvcert are given"},
+    {OPT_MORE_STR, 0, 0,
+     "or to be revoked in rr"},
     {"days", OPT_DAYS, 'N',
      "Requested validity time of the new certificate in number of days"},
     {"reqexts", OPT_REQEXTS, 's',
@@ -343,6 +345,8 @@ const OPTIONS cmp_options[] = {
      "Reason code to include in revocation request (rr); possible values:"},
     {OPT_MORE_STR, 0, 0,
      "0..6, 8..10 (see RFC5280, 5.3.1) or -1. Default -1 = none included"},
+     {"serialnumber", OPT_SERIALNUMBER, 's',
+     "Serial number of certificate to be revoked in revocation request (rr)"},
 
     OPT_SECTION("Message transfer"),
 #ifdef OPENSSL_NO_SOCK

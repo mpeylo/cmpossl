@@ -561,16 +561,22 @@ OSSL_CMP_MSG *ossl_cmp_rr_new(OSSL_CMP_CTX *ctx)
         goto err;
 
     /* Fill the template from the contents of the certificate to be revoked */
-    ret = ctx->oldCert != NULL
-    ? OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
-                                  NULL /* pubkey would be redundant */,
-                                  NULL /* subject would be redundant */,
-                                  X509_get_issuer_name(ctx->oldCert),
-                                  X509_get0_serialNumber(ctx->oldCert))
-    : OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
-                                  X509_REQ_get0_pubkey(ctx->p10CSR),
-                                  X509_REQ_get_subject_name(ctx->p10CSR),
-                                  NULL, NULL);
+    ret = ctx->serialNumber != NULL && ctx->issuer != NULL
+        ? OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
+                                      NULL /* pubkey would be redundant */, 0,
+                                      NULL /* subject would be redundant */,
+                                      ctx->issuer,
+                                      ctx->serialNumber)
+        : ctx->oldCert != NULL
+        ? OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
+                                      NULL /* pubkey would be redundant */, 0,
+                                      NULL /* subject would be redundant */,
+                                      X509_get_issuer_name(ctx->oldCert),
+                                      X509_get0_serialNumber(ctx->oldCert))
+        : OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
+                                      X509_REQ_get0_pubkey(ctx->p10CSR), 0,
+                                      X509_REQ_get_subject_name(ctx->p10CSR),
+                                      NULL, NULL);
     if (!ret)
         goto err;
 
