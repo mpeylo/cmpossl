@@ -7,15 +7,25 @@ name: CI
 on: push
 
 jobs:
+  cmake
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: cmake
+        run: |
+          cmake .
+          make
+
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: build
         run: |
           # would need access to azure.archive.ubuntu.com:
           # sudo apt-get update
           # sudo apt-get install -y >/dev/null libssl-dev build-essential # not needed
+          ln -s Makefile_v1 Makefile
           make
           make clean
           make build
@@ -23,10 +33,11 @@ jobs:
   deb:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: deb
         run: |
           # needs access to azure.archive.ubuntu.com:
           sudo apt-get update
           sudo apt-get install -y >/dev/null debhelper devscripts
+          ln -s Makefile_v1 Makefile
           make deb

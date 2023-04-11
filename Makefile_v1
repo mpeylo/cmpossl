@@ -1,4 +1,5 @@
-#!/bin/make
+#!/usr/bin/make
+
 # Optional OUT_DIR defines where the resulting cmp lib will be placed (default: ".").
 # Optional LIBCMP_INC defines where the libcmp header files will be placed (default: "OUT_DIR/include/cmp").
 # Optional OPENSSL_DIR defines where to find the OpenSSL installation (default: "/usr" or ".").
@@ -57,7 +58,7 @@ ifneq ($(filter-out doc update uninstall clean clean_install clean_deb,$(MAKECMD
     ifeq (,$(wildcard $(OPENSSL_DIR)/include/openssl))
         $(error cannot find directory '$(OPENSSL_DIR)/include/openssl', check OPENSSL_DIR variable)
     endif
-    OPENSSL_VERSION=$(shell $(MAKE) -s --no-print-directory -f OpenSSL_version.mk LIB=h OPENSSL_DIR="$(OPENSSL_DIR)")
+    OPENSSL_VERSION=$(shell $(MAKE) -f OpenSSL_version.mk -s --no-print-directory LIB=h OPENSSL_DIR="$(OPENSSL_DIR)")
     ifeq ($(OPENSSL_VERSION),)
         $(warning cannot determine version of OpenSSL in directory '$(OPENSSL_DIR)', assuming 1.1.1)
         OPENSSL_VERSION=1.1.1
@@ -120,9 +121,6 @@ build: $(OUT_DIR) $(OUT_DIR)/$(OUTLIB)
 
 $(LIBCMP_INC)/openssl:
 	@mkdir -p $(LIBCMP_INC)/openssl
-ifeq ($(shell expr "$(OPENSSL_VERSION)" \< 3.0),1)
-	@cd $(LIBCMP_INC)/openssl; touch macros.h types.h trace.h
-endif
 
 $(LIBCMP_INC)/internal:
 	@mkdir -p $(LIBCMP_INC)/internal
@@ -141,6 +139,7 @@ $(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	ln -sfr $(OUT_DIR)/$(OUTLIB){.$(VERSION),}
 
 clean: clean_deb
+	rm -fr CMakeCache.txt *.cmake install_manifest.txt CMakeFiles/
 	rm -f $(LIBCMP_INC)/openssl/* $(LIBCMP_INC)/internal/*
 	rmdir $(LIBCMP_INC)/openssl $(LIBCMP_INC)/internal $(LIBCMP_INC) 2>/dev/null || true
 	rm -f $(OUT_DIR)/$(OUTLIB)*
