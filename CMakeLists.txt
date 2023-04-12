@@ -58,15 +58,18 @@ set(INC_PUBLIC_HDRS
 
 add_library(${PROJECT_NAME} SHARED ${CMPOSSL_SRC})
 target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${INC_DIR})
 
-if(DEFINED ENV{NDEBUG})
-  add_definitions(-DNDEBUG=1 -O2)
-else()
+target_include_directories(${PROJECT_NAME} PRIVATE ${INC_DIR})
+# does not work for OpenSSL 3.0+:
+# add_definitions(-isystem ${INC_DIR})
+
+if((CMAKE_BUILD_TYPE MATCHES Debug) AND (NOT DEFINED ENV{NDEBUG}))
   add_definitions(-g -O0)
   set(DEBUG_FLAGS -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all)
   add_definitions(${DEBUG_FLAGS})
   link_libraries(${DEBUG_FLAGS})
+else()
+  add_definitions(-DNDEBUG=1 -O2)
 endif()
 
 target_compile_options(${PROJECT_NAME} PRIVATE
@@ -81,6 +84,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   VERSION ${CMPOSSL_VERSION} SOVERSION ${CMPOSSL_VERSION_MAJOR}
   PUBLIC_HEADER "${INC_PUBLIC_HDRS}"
 )
+
+# implied when used with genCMPClient:
+# ADD_CUSTOM_TARGET(build # just an alias
+#   COMMAND make all
+# )
 
 install(TARGETS ${PROJECT_NAME}
   LIBRARY
