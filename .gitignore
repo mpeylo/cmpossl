@@ -1,5 +1,4 @@
 # Top level excludes
-/include/cmp
 apps/openssl
 attic
 test/recipes/80-test_cmp_http_data/SimpleLra
