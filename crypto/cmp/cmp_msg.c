@@ -20,11 +20,11 @@
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L   
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 # define OSSL_CMP_PKISI_dup(si) OSSL_CMP_PKISI_dup((OSSL_CMP_PKISI *)(si)) /* hack */
 # define OSSL_CRMF_CERTID_dup(ci) OSSL_CRMF_CERTID_dup((OSSL_CRMF_CERTID *)(ci)) /* hack */
 # define ASN1_item_i2d(val, out, it) ASN1_item_i2d((ASN1_VALUE *)(val), out, it); /* hack */
-#endif   
+#endif
 
 #if OPENSSL_VERSION_NUMBER <= 0x30200000L
 
@@ -66,7 +66,6 @@ int ossl_cmp_msg_set0_libctx(OSSL_CMP_MSG *msg, OSSL_LIB_CTX *libctx,
     }
     return 1;
 }
-
 
 OSSL_CMP_PKIHEADER *OSSL_CMP_MSG_get0_header(const OSSL_CMP_MSG *msg)
 {
