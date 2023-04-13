@@ -183,7 +183,7 @@ static int test_exec_RR_ses_receive_error(void)
 static int test_exec_IR_ses(void)
 {
     SETUP_TEST_FIXTURE(CMP_SES_TEST_FIXTURE, set_up);
-    fixture->req_type = OSSL_CMP_PKIBODY_IR;
+    fixture->req_type = OSSL_CMP_IR;
     fixture->expected = OSSL_CMP_PKISTATUS_accepted;
     fixture->caPubs = sk_X509_new_null();
     sk_X509_push(fixture->caPubs, server_cert);
@@ -193,7 +193,7 @@ static int test_exec_IR_ses(void)
     return result;
 }
 
-static int test_exec_any_ses_poll(int req_type, int check_after,
+static int test_exec_REQ_ses_poll(int req_type, int check_after,
                                   int poll_count, int total_timeout,
                                   int expect)
 {
@@ -205,14 +205,10 @@ static int test_exec_any_ses_poll(int req_type, int check_after,
     OSSL_CMP_CTX_set_option(fixture->cmp_ctx,
                             OSSL_CMP_OPT_TOTAL_TIMEOUT, total_timeout);
 
-    if (req_type == OSSL_CMP_PKIBODY_IR || req_type == OSSL_CMP_PKIBODY_CR
-        || req_type == OSSL_CMP_PKIBODY_KUR
-        || req_type == OSSL_CMP_PKIBODY_P10CR) {
+    if (req_type == OSSL_CMP_IR) {
         EXECUTE_TEST(execute_exec_certrequest_ses_test, tear_down);
-    } else if (req_type == OSSL_CMP_PKIBODY_GENM) {
+    } else if (req_type == OSSL_CMP_GENM) {
         EXECUTE_TEST(execute_exec_GENM_ses_test, tear_down);
-    } else {
-        result = 0;
     }
     return result;
 }
@@ -220,20 +216,19 @@ static int test_exec_any_ses_poll(int req_type, int check_after,
 static int checkAfter = 1;
 static int test_exec_IR_ses_poll_ok(void)
 {
-    return test_exec_any_ses_poll(OSSL_CMP_PKIBODY_IR, checkAfter, 2, 0,
+    return test_exec_REQ_ses_poll(OSSL_CMP_IR, checkAfter, 2, 0,
                                   OSSL_CMP_PKISTATUS_accepted);
 }
 
 static int test_exec_IR_ses_poll_no_timeout(void)
 {
-    return test_exec_any_ses_poll(OSSL_CMP_PKIBODY_IR, checkAfter,
-                                  2 /* pollCount */, checkAfter + 4,
-                                  OSSL_CMP_PKISTATUS_accepted);
+    return test_exec_REQ_ses_poll(OSSL_CMP_IR, checkAfter, 2 /* pollCount */,
+                                  checkAfter + 4, OSSL_CMP_PKISTATUS_accepted);
 }
 
 static int test_exec_IR_ses_poll_total_timeout(void)
 {
-    return !test_exec_any_ses_poll(OSSL_CMP_PKIBODY_IR, checkAfter + 1,
+    return !test_exec_REQ_ses_poll(OSSL_CMP_IR, checkAfter + 1,
                                    3 /* pollCount */, checkAfter + 6,
                                    OSSL_CMP_PKISTATUS_waiting);
 }
@@ -241,7 +236,7 @@ static int test_exec_IR_ses_poll_total_timeout(void)
 static int test_exec_CR_ses(int implicit_confirm, int granted, int reject)
 {
     SETUP_TEST_FIXTURE(CMP_SES_TEST_FIXTURE, set_up);
-    fixture->req_type = OSSL_CMP_PKIBODY_CR;
+    fixture->req_type = OSSL_CMP_CR;
     OSSL_CMP_CTX_set_option(fixture->cmp_ctx,
                             OSSL_CMP_OPT_IMPLICIT_CONFIRM, implicit_confirm);
     OSSL_CMP_SRV_CTX_set_grant_implicit_confirm(fixture->srv_ctx, granted);
@@ -268,7 +263,7 @@ static int test_exec_CR_ses_implicit_confirm(void)
 static int test_exec_KUR_ses(int transfer_error)
 {
     SETUP_TEST_FIXTURE(CMP_SES_TEST_FIXTURE, set_up);
-    fixture->req_type = OSSL_CMP_PKIBODY_KUR;
+    fixture->req_type = OSSL_CMP_KUR;
     if (transfer_error)
         OSSL_CMP_CTX_set_transfer_cb_arg(fixture->cmp_ctx, NULL);
     fixture->expected = transfer_error ? OSSL_CMP_PKISTATUS_trans
@@ -305,7 +300,7 @@ static int test_exec_P10CR_ses(int reject)
     X509_REQ *csr = NULL;
 
     SETUP_TEST_FIXTURE(CMP_SES_TEST_FIXTURE, set_up);
-    fixture->req_type = OSSL_CMP_PKIBODY_P10CR;
+    fixture->req_type = OSSL_CMP_P10CR;
     fixture->expected = reject ? OSSL_CMP_PKISTATUS_rejection
         : OSSL_CMP_PKISTATUS_accepted;
     ctx = fixture->cmp_ctx;
@@ -336,7 +331,7 @@ static int execute_try_certreq_poll_test(CMP_SES_TEST_FIXTURE *fixture)
     OSSL_CMP_CTX *ctx = fixture->cmp_ctx;
     int check_after;
     const int CHECK_AFTER = 0;
-    const int TYPE = OSSL_CMP_PKIBODY_KUR;
+    const int TYPE = OSSL_CMP_KUR;
 
     ossl_cmp_mock_srv_set_pollCount(fixture->srv_ctx, 3);
     ossl_cmp_mock_srv_set_checkAfterTime(fixture->srv_ctx, CHECK_AFTER);
@@ -365,7 +360,7 @@ static int execute_try_certreq_poll_abort_test(CMP_SES_TEST_FIXTURE *fixture)
     OSSL_CMP_CTX *ctx = fixture->cmp_ctx;
     int check_after;
     const int CHECK_AFTER = 99;
-    const int TYPE = OSSL_CMP_PKIBODY_CR;
+    const int TYPE = OSSL_CMP_CR;
 
     ossl_cmp_mock_srv_set_pollCount(fixture->srv_ctx, 3);
     ossl_cmp_mock_srv_set_checkAfterTime(fixture->srv_ctx, CHECK_AFTER);
@@ -387,21 +382,23 @@ static int test_try_certreq_poll_abort(void)
 
 static int test_exec_GENM_ses_poll_ok(void)
 {
-    return test_exec_any_ses_poll(OSSL_CMP_PKIBODY_GENM, checkAfter, 2, 0,
+    return test_exec_REQ_ses_poll(OSSL_CMP_GENM, checkAfter, 2, 0,
                                   OSSL_CMP_PKISTATUS_accepted);
 }
 
 static int test_exec_GENM_ses_poll_no_timeout(void)
 {
-    return test_exec_any_ses_poll(OSSL_CMP_PKIBODY_GENM, checkAfter,
-                                  1 /* pollCount */, checkAfter + 1,
+    return test_exec_REQ_ses_poll(OSSL_CMP_GENM, checkAfter,
+                                  1 /* pollCount */,
+                                  checkAfter + 1,
                                   OSSL_CMP_PKISTATUS_accepted);
 }
 
 static int test_exec_GENM_ses_poll_total_timeout(void)
 {
-    return test_exec_any_ses_poll(OSSL_CMP_PKIBODY_GENM, checkAfter + 1,
-                                  3 /* pollCount */, checkAfter + 2,
+    return test_exec_REQ_ses_poll(OSSL_CMP_GENM, checkAfter + 1,
+                                  3 /* pollCount */,
+                                  checkAfter + 2,
                                   OSSL_CMP_PKISTATUS_waiting);
 }
 
