@@ -76,7 +76,7 @@ struct ossl_crmf_encryptedkey_st {
     } value;
 } /* OSSL_CRMF_ENCRYPTEDKEY */;
 
-# if OPENSSL_VERSION_NUMBER < 0x30200000L
+# if OPENSSL_VERSION_NUMBER <= 0x30200000L
 
 /*-
  *  Attributes ::= SET OF Attribute
@@ -303,7 +303,7 @@ typedef struct ossl_crmf_popo_st {
     } value;
 } OSSL_CRMF_POPO;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_POPO)
-#endif /* OPENSSL_VERSION_NUMBER < 0x30200000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */
 
 /*-
  * OptionalValidity ::= SEQUENCE {
@@ -362,7 +362,7 @@ struct ossl_crmf_certrequest_st {
 } /* OSSL_CRMF_CERTREQUEST */;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_CERTREQUEST)
 DECLARE_ASN1_DUP_FUNCTION(OSSL_CRMF_CERTREQUEST)
-#if OPENSSL_VERSION_NUMBER < 0x30200000L
+#if OPENSSL_VERSION_NUMBER <= 0x30200000L
 
 /* ossl_crmf_attributetypeandvalue_st decl is in include/internal/crmf.h */
 

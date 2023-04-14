@@ -41,7 +41,7 @@
 IMPLEMENT_ASN1_DUP_FUNCTION(X509_PUBKEY)
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x30200000L
+#if OPENSSL_VERSION_NUMBER <= 0x30200000L
 /*-
  * atyp = Attribute Type
  * valt = Value Type
@@ -646,7 +646,7 @@ BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
                            OSSL_LIB_CTX *libctx, const char *propq);
 #endif
 #endif /* OPENSSL_NO_CMS */
-#endif /* OPENSSL_VERSION_NUMBER < 0x30200000L */
+#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */
 
 #ifndef OPENSSL_NO_CMS
 DECLARE_ASN1_ITEM(CMS_SignedData) /* copied from cms_local.h */
