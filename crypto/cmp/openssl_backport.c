@@ -953,3 +953,23 @@ X509_ALGOR *ossl_X509_ALGOR_from_nid(int nid, int ptype, void *pval)
     return NULL;
 }
 # endif
+
+#if OPENSSL_VERSION_NUMBER < 0x30200000L
+/* copied from ../x509/x_pubkey.c: */
+struct X509_pubkey_st {
+    X509_ALGOR *algor;
+    ASN1_BIT_STRING *public_key;
+    EVP_PKEY *pkey;
+};
+/* Added to OpenSSL 3.1 in #18668 */
+void X509_PUBKEY_set0_public_key(X509_PUBKEY *pub,
+                                 unsigned char *penc, int penclen)
+{
+    OPENSSL_free(pub->public_key->data);
+    pub->public_key->data = penc;
+    pub->public_key->length = penclen;
+    /* Set number of unused bits to zero */
+    pub->public_key->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
+    pub->public_key->flags |= ASN1_STRING_FLAG_BITS_LEFT;
+}
+#endif
