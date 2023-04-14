@@ -41,13 +41,13 @@ endif
 ifeq ($(shell echo $(OPENSSL_DIR) | grep "^/"),)
 # $(OPENSSL_DIR) is relative path
     OPENSSL=$(OPENSSL_DIR)
-    OPENSSL_LIB=$(OPENSSL)
+    OPENSSL_LIB ?= $(OPENSSL)
     OPENSSL_RPATH=$(OPENSSL)
     OPENSSL_RPATH_LIB=$(OPENSSL)
 else
 # $(OPENSSL_DIR) is absolute path
     OPENSSL=$(OPENSSL_DIR)
-    OPENSSL_LIB=$(OPENSSL)/$(LIB)
+    OPENSSL_LIB ?= $(OPENSSL)/$(LIB)
     OPENSSL_RPATH=$(OPENSSL_DIR)
     OPENSSL_RPATH_LIB=$(OPENSSL_LIB)
 endif
@@ -121,7 +121,7 @@ $(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	ln -sfr $(OUT_DIR)/$(OUTLIB){.$(VERSION),}
 
 clean: clean_deb
-	rm -fr CMakeCache.txt *.cmake install_manifest.txt CMakeFiles/
+	@# rm -fr CMakeCache.txt *.cmake install_manifest.txt CMakeFiles/
 	rm -f $(OUT_DIR)/$(OUTLIB)*
 
 SYSTEM_LIB=/usr/lib

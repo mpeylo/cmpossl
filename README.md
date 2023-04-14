@@ -63,18 +63,16 @@ git clone git@github.com:mpeylo/cmpossl.git --depth 1
 cd cmpossl
 make -f OpenSSL_version.mk
 ```
-In order for this to work, you may need to set OPENSSL_DIR as described below,
-e.g.,
-```
-export OPENSSL_DIR=/usr/local
-```
-
 This should output on the console something like
 ```
 cc [...] OpenSSL_version.c -lcrypto -o OpenSSL_version
 OpenSSL 3.0.8 7 Feb 2023 (0x30000080)
 ```
 
+You might need to set the variable `OPENSSL_DIR` first as described below, e.g.,
+```
+export OPENSSL_DIR=/usr/local
+```
 
 ## Getting the software
 
@@ -101,15 +99,21 @@ make update
 ```
 
 
-## Building the software
+## Configuring and building
 
 The library assumes that OpenSSL is already installed,
-including the C header files needed for development (as provided by, e.g., the Debian/Ubuntu package `libssl-dev`).
-By default the library makes use of any OpenSSL installation available on the system.
-The OpenSSL headers will be searched for in `/usr/include` and its shared objects in `/usr/lib` (or `/usr/bin` for Cygwin).
-You may point the environment variable `OPENSSL_DIR` to an alternative OpenSSL installation, e.g.:
+including the C header files needed for development
+(as provided by, e.g., the Debian/Ubuntu package `libssl-dev`).
+
+By default any OpenSSL installation available on the system is used.
+Set the optional environment variable `OPENSSL_DIR` to specify the
+absolute (or relative to `../`) path of the OpenSSL installation to use, e.g.:
 ```
 export OPENSSL_DIR=/usr/local
+```
+In case its libraries are in a different location, set also `OPENSSL_LIB`, e.g.:
+```
+export OPENSSL_LIB=$OPENSSL_DIR/lib
 ```
 
 Since version 2, it is recommended to use CMake to produce the `Makefile`,
@@ -124,22 +128,24 @@ pre-defined [`Makefile_v1`](Makefile_v1); to this end symlink it to `Makefile`:
 ln -s Makefile_v1 Makefile
 ```
 In this case you may also specify using the environment variable `OUT_DIR`
-where the produced library files (e.g., `libcmp.so.2`) shall be placed.
-By default, the current directory (`.`) is used.
+where the produced library files (e.g., `libcmp.so.2.0`) shall be placed.
+By default, the current directory (`.`) is used.\
+The environment variable `CC` may be set as needed; it defaults to `gcc`.\
 For further details on optional environment variables,
 see the [`Makefile_v1`](Makefile_v1).
 
-In the newly created directory `cmpossl` you can build the software simply with
+Build the software with
 ```
 make
 ```
-where the CC environment variable may be set as needed; it defaults to %'gcc'.
-<!--
-Also the ROOTFS environment variable may be set, e.g., for cross compilation.
--->
 
-The result is in, for instance, `./libcmp.so.1`.
+By default, builds are done in Debug mode.
+For Release mode use `-DCMAKE_BUILD_TYPE=Release` or `NDEBUG=1`.
 
+The result is in, for instance, `./libcmp.so.2.0`.
+
+When using CMake, `cmake` must be (re-)run
+after setting or unsetting environment variables.
 
 ## Using the library in own applications
 
@@ -156,6 +162,19 @@ it is recommended to set also linker options like `-Wl,-rpath=.`.
 Also make sure that the OpenSSL libraries (typically referred to via `-lssl -lcrypto`) are in your library path and
 (the version) of the libraries found there by the linker match the header files found by the compiler.
 
+
+### Installing and uninstalling
+
+The software can be installed with
+```
+make install
+```
+and uninstalled with
+```
+make uninstall
+```
+
+The destination is `/usr/local`, unless specified otherwise by `ROOTFS`.
 
 ## Building Debian packages
 

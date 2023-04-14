@@ -12,11 +12,18 @@ message(STATUS "CMPforOpenSSL version " ${CMPOSSL_VERSION})
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if(DEFINED ENV{OPENSSL_DIR})
+  message(STATUS "using OpenSSL from " $ENV{OPENSSL_DIR})
+  if(DEFINED ENV{OPENSSL_LIB})
+    set(OPENSSL_LIB $ENV{OPENSSL_LIB})
+  else()
+    set(OPENSSL_LIB $ENV{OPENSSL_DIR})
+  endif()
   set(OpenSSL_INCLUDE_DIRS $ENV{OPENSSL_DIR}/include)
-  set(OPENSSL_LIBRARIES $ENV{OPENSSL_DIR}/libssl.so $ENV{OPENSSL_DIR}/libcrypto.so)
+  set(OPENSSL_LIBRARIES ${OPENSSL_LIB}/libssl.so ${OPENSSL_LIB}/libcrypto.so)
   add_definitions(-isystem ${OpenSSL_INCLUDE_DIRS})
 else()
   find_package(OpenSSL REQUIRED)
+  message(STATUS "using OpenSSL version " ${OPENSSL_VERSION})
 endif()
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/crypto)
@@ -63,13 +70,15 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${INC_DIR})
 # does not work for OpenSSL 3.0+:
 # add_definitions(-isystem ${INC_DIR})
 
-if((CMAKE_BUILD_TYPE MATCHES Debug) AND (NOT DEFINED ENV{NDEBUG}))
+if((CMAKE_BUILD_TYPE MATCHES Release) OR (DEFINED ENV{NDEBUG}))
+  message(STATUS "build mode: Release")
+  add_definitions(-DNDEBUG=1 -O2)
+else()
+  message(STATUS "build mode: Debug")
   add_definitions(-g -O0)
   set(DEBUG_FLAGS -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all)
   add_definitions(${DEBUG_FLAGS})
   link_libraries(${DEBUG_FLAGS})
-else()
-  add_definitions(-DNDEBUG=1 -O2)
 endif()
 
 target_compile_options(${PROJECT_NAME} PRIVATE
@@ -85,10 +94,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   PUBLIC_HEADER "${INC_PUBLIC_HDRS}"
 )
 
-# implied when used with genCMPClient:
-# ADD_CUSTOM_TARGET(build # just an alias
-#   COMMAND make all
-# )
+if(NOT TARGET build)
+  add_custom_target(build COMMAND make all)
+endif()
+
+if(DEFINED ENV{ROOTFS})
+  set(CMAKE_INSTALL_PREFIX $ENV{ROOTFS} CACHE PATH "comment" FORCE)
+endif()
 
 install(TARGETS ${PROJECT_NAME}
   LIBRARY
@@ -98,3 +110,7 @@ install(TARGETS ${PROJECT_NAME}
     DESTINATION include/cmp/openssl/
     COMPONENT Development
 )
+
+if(NOT TARGET uninstall)
+  add_custom_target(uninstall COMMAND xargs rm -vf <install_manifest.txt)
+endif()

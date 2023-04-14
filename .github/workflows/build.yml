@@ -14,7 +14,9 @@ jobs:
       - name: cmake
         run: |
           cmake .
-          make
+          cmake --build .
+          cmake -DCMAKE_BUILD_TYPE=Release .
+          make clean build
 
   build:
     runs-on: ubuntu-latest
