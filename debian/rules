@@ -9,16 +9,23 @@ AR=$(DEB_HOST_GNU_TYPE)-ar
 %:
 	dh $@
 
-override_dh_auto_configure:
-	touch Makefile # trigger use of 'make' in dh_auto_build and dh_auto_install
+#override_dh_auto_configure:
+#	touch Makefile # trigger use of 'make' in dh_auto_build and dh_auto_install
 
 override_dh_auto_build:
 #	CFLAGS="-O2 -DNDEBUG" CXXFLAGS="-O2 -DNDEBUG" DEBUG_FLAGS="" LDFLAGS=""  # can be used to avoid dependency on libasan and libubsan
 	OPENSSL_DIR=/usr CC=$(CC) CXX=$(CXX) AR=$(AR) \
-	  dh_auto_build -- # may add 'make' options here
+	  dh_auto_build  -- -f Makefile_v1 OPENSSL_DIR="$(OPENSSL_DIR)" # may add further 'make' options here
+
+#override_dh_builddeb:
+#	dh_builddeb --destdir . --
+
+override_dh_auto_install:
+	dh_auto_install --destdir debian/tmp -- -f Makefile_v1
+
+override_dh_shlibdeps:
+	dh_shlibdeps --dpkg-shlibdeps-params="--ignore-missing-info"
 
 override_dh_auto_test:
 # do not run any tests
 
-#override_dh_builddeb:
-#	dh_builddeb --destdir . --

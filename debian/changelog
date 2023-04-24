@@ -1,13 +1,13 @@
 libcmp (2.0) stable; urgency=medium
 
-	* Include all features of the Lightweight CMP Profile
-	* Improve CMake and Debian packaging support
-	* Fix various small bugs and OpenSSL version incompatibilities
+  * Include all features of the Lightweight CMP Profile
+  * Improve CMake and Debian packaging support
+  * Fix various small bugs and OpenSSL version incompatibilities
 
  -- David von Oheimb <David.von.Oheimb@siemens.com>  Fri, 14 Apr 2023 09:08:33 +0200
 
 libcmp (1.0) stable; urgency=medium
 
-	* Initial release
+  * Initial release
 
  -- David von Oheimb <David.von.Oheimb@siemens.com>  Fri, 17 Sep 2021 12:22:57 +0200

@@ -33,9 +33,9 @@ endif
 SYSTEM_INCLUDE_OPENSSL=/usr/include/openssl
 ifeq ($(OPENSSL_DIR),)
    ifneq (,$(wildcard $(SYSTEM_INCLUDE_OPENSSL)))
-     OPENSSL_DIR=/usr
+     override OPENSSL_DIR=/usr
    else
-     OPENSSL_DIR=.
+     override OPENSSL_DIR=.
    endif
 endif
 ifeq ($(shell echo $(OPENSSL_DIR) | grep "^/"),)
@@ -161,7 +161,8 @@ uninstall: clean_install
 deb:
 	@ #tar czf $(SRCS_TAR) $(SRCS)
 	@ #rm -f $(OUTLIB).$(VERSION) debian/tmp/usr/lib/libcmp.so*
-	debuild -uc -us --lintian-opts --profile debian # --fail-on none
+	debuild --preserve-envvar OPENSSL_DIR \
+	  -uc -us --lintian-opts --profile debian # --fail-on none
 	@ #rm $(SRCS_TAR)
 # alternative:
 #	LD_LIBRARY_PATH= dpkg-buildpackage -uc -us # may prepend DH_VERBOSE=1

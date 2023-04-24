@@ -8,9 +8,9 @@ Standards-Version: 4.5.1
 
 Package: libcmp
 Architecture: any
-Depends: libssl1.1, ${shlibs:Depends}, ${misc:Depends}
+Depends: libssl3, ${shlibs:Depends}, ${misc:Depends}
 Description: Certificate Management Prototocl (CMP) library
- Adds CMP support to OpenSSL 1.x in the form of an extra library
+ Adds CMP support to OpenSSL in the form of an extra library
 
 Package: libcmp-dev
 Section: libdevel
