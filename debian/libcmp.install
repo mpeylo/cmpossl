@@ -1,1 +1,1 @@
-usr/lib/lib*.so.*
+libcmp.so* /usr/lib

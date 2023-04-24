@@ -189,13 +189,9 @@ To build the Debian packages, the following dependencies need to be installed:
 * `libssl-dev`
 
 Currently [`CMakeLists.txt`](CMakeLists.txt) does not support Debian packaging.
-Yet [`Makefile_v1`](Makefile_v1) may be used after symlinking it to `Makefile`:
+Yet [`Makefile_v1`](Makefile_v1) may be used like this:
 ```
-ln -s Makefile_v1 Makefile
-```
-Then the packages can be built by
-```
-make deb
+make -f Makefile_v1 deb
 ```
 On success, they are placed in the parent directory (`../`).
 

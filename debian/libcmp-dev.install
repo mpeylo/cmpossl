@@ -1,4 +1,2 @@
-usr/lib/lib*.so
-usr/include/cmp/openssl/*.h
-usr/include/cmp/internal/*.h
-usr/share/doc/libcmp-dev/*.pod
+include/cmp/openssl/*.h  /usr/include/cmp/openssl
+doc/man3/*.pod           /usr/share/doc/libcmp-dev
