@@ -11,7 +11,7 @@ message(STATUS "CMPforOpenSSL version " ${CMPOSSL_VERSION})
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
-if(DEFINED ENV{OPENSSL_DIR})
+if(NOT("$ENV{OPENSSL_DIR}" STREQUAL ""))
   message(STATUS "using OpenSSL from " $ENV{OPENSSL_DIR})
   if(DEFINED ENV{OPENSSL_LIB})
     set(OPENSSL_LIB $ENV{OPENSSL_LIB})
@@ -24,6 +24,7 @@ if(DEFINED ENV{OPENSSL_DIR})
 else()
   find_package(OpenSSL REQUIRED)
   message(STATUS "using OpenSSL version " ${OPENSSL_VERSION})
+  add_definitions(-isystem /usr/include)
 endif()
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/crypto)

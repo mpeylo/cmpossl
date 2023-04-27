@@ -141,6 +141,7 @@ make
 
 By default, builds are done in Debug mode.
 For Release mode use `-DCMAKE_BUILD_TYPE=Release` or `NDEBUG=1`.
+For switching to Debug mode, use `-DCMAKE_BUILD_TYPE=Debug` and unset `NDEBUG`.
 
 The result is in, for instance, `./libcmp.so.2.0`.
 
