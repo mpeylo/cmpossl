@@ -173,9 +173,10 @@ static OSSL_CMP_MSG *delayed_delivery(OSSL_CMP_SRV_CTX *srv_ctx,
                                       const OSSL_CMP_MSG *req)
 {
     int ret;
+    unsigned long err;
     int status = OSSL_CMP_PKISTATUS_waiting,
-        fail_info = 0;
-    const char *txt = NULL;
+        fail_info = 0, errorCode = 0;
+    const char *txt = NULL, *details = NULL;
     OSSL_CMP_PKISI *si;
     OSSL_CMP_MSG *msg;
 
@@ -192,18 +193,17 @@ static OSSL_CMP_MSG *delayed_delivery(OSSL_CMP_SRV_CTX *srv_ctx,
         status = OSSL_CMP_PKISTATUS_rejection;
         fail_info = 1 << OSSL_CMP_PKIFAILUREINFO_systemFailure;
         txt = "server application error";
+        err = ERR_peek_error();
+        errorCode = ERR_GET_REASON(err);
+        details = ERR_reason_error_string(err);
     }
 
     si = OSSL_CMP_STATUSINFO_new(status, fail_info, txt);
     if (si == NULL)
         return NULL;
 
-    si = OSSL_CMP_STATUSINFO_new(OSSL_CMP_PKISTATUS_waiting, 0, NULL);
-    if (si == NULL)
-        return NULL;
-
-    msg = ossl_cmp_error_new(srv_ctx->ctx, si, 0,
-                             NULL, srv_ctx->sendUnprotectedErrors);
+    msg = ossl_cmp_error_new(srv_ctx->ctx, si, errorCode, details,
+                             srv_ctx->sendUnprotectedErrors);
     OSSL_CMP_PKISI_free(si);
     return msg;
 }
@@ -611,7 +611,7 @@ OSSL_CMP_MSG *OSSL_CMP_SRV_process_request(OSSL_CMP_SRV_CTX *srv_ctx,
 
     if (srv_ctx->polling && req_type != OSSL_CMP_PKIBODY_POLLREQ
             && req_type != OSSL_CMP_PKIBODY_ERROR) {
-        ERR_raise(ERR_LIB_CMP, CMP_R_UNEXPECTED_PKIBODY);
+        ERR_raise(ERR_LIB_CMP, CMP_R_EXPECTED_POLLREQ);
         goto err;
     }
 
