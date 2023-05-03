@@ -211,11 +211,6 @@ static int delayed_delivery(OSSL_CMP_SRV_CTX *srv_ctx, const OSSL_CMP_MSG *req)
 
     if (ctx->pollCount > 0 && ctx->curr_pollCount == 0) {
         /* start polling */
-        if (ctx->req != NULL) { /* TODO: move this check to cmp_server.c */
-            /* already in polling mode */
-            ERR_raise(ERR_LIB_CMP, CMP_R_UNEXPECTED_PKIBODY);
-            return -1;
-        }
         if ((ctx->req = OSSL_CMP_MSG_dup(req)) == NULL)
             return -1;
         return 1;
