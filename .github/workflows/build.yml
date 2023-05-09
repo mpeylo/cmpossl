@@ -27,10 +27,9 @@ jobs:
           # would need access to azure.archive.ubuntu.com:
           # sudo apt-get update
           # sudo apt-get install -y >/dev/null libssl-dev build-essential # not needed
-          ln -s Makefile_v1 Makefile
-          make
-          make clean
-          make build
+          make -f Makefile_v1
+          make -f Makefile_v1 clean
+          make -f Makefile_v1 build
 
   deb:
     runs-on: ubuntu-latest
@@ -41,5 +40,4 @@ jobs:
           # needs access to azure.archive.ubuntu.com:
           sudo apt-get update
           sudo apt-get install -y >/dev/null debhelper devscripts
-          ln -s Makefile_v1 Makefile
-          make deb
+          make -f Makefile_v1 deb

@@ -127,6 +127,8 @@ pre-defined [`Makefile_v1`](Makefile_v1); to this end symlink it to `Makefile`:
 ```
 ln -s Makefile_v1 Makefile
 ```
+or use for instance `make -f Makefile_v1`.
+
 In this case you may also specify using the environment variable `OUT_DIR`
 where the produced library files (e.g., `libcmp.so.2.0`) shall be placed.
 By default, the current directory (`.`) is used.\
