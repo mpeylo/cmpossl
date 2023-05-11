@@ -1,9 +1,12 @@
 #!/usr/bin/make
 
-# Optional OUT_DIR defines where the resulting cmp lib will be placed (default: ".").
 # Optional OPENSSL_DIR defines where to find the OpenSSL installation (default: "/usr" or ".").
-# These paths may be absolute or relative to the dir containing this Makefile.
+# Optional CFLAGS and LDFLAGS are appended by local settings.
 # Optional DEBUG_FLAGS may set to prepend to local CFLAGS and LDFLAGS (default see below).
+# Builds are done in release mode if optional NDEBUG is defined.
+# Optional OUT_DIR defines where the resulting cmp lib will be placed (default: ".").
+# Optional DESTDIR defines a prefix for the installation target directories.
+# These paths may be absolute or relative to the dir containing this Makefile.
 
 SHELL=bash # This is needed for supporting extended file name globbing
 
@@ -128,7 +131,7 @@ SYSTEM_LIB=/usr/lib
 SYSTEM_INCLUDE=/usr/include
 DEST_LIB=$(ROOTFS)$(SYSTEM_LIB)
 DEST_INC=$(ROOTFS)$(SYSTEM_INCLUDE)/cmp
-DEST_DOC=$(ROOTFS)/usr/share/doc/libcmp-dev
+DEST_MAN=$(ROOTFS)/usr/share/man/man3
 LIBCMP_DOCS_ = $(wildcard doc/man3/*.pod)
 
 .phony: install uninstall clean_install
@@ -139,19 +142,17 @@ install: # $(OUT_DIR)/$(OUTLIB).$(VERSION)
 #install_headers:
 	mkdir -p $(DEST_INC)/openssl
 	install -D $(LIBCMP_INC)/openssl/*.h $(DEST_INC)/openssl
-	mkdir -p $(DEST_INC)/internal
-	install -D $(LIBCMP_INC)/internal/*.h $(DEST_INC)/internal
 #install_doc:
-	mkdir -p $(DEST_DOC)
-	install -D $(LIBCMP_DOCS_) $(DEST_DOC)
+	mkdir -p $(DEST_MAN)
+	install -D $(LIBCMP_DOCS_) $(DEST_MAN)
 
 clean_install:
 	rm -f $(DEST_LIB)/$(OUTLIB)*
-	rm -rf $(DEST_INC)/{openssl,internal}
-	rmdir $(DEST_INC) || true
+	rm -rf $(DEST_INC)/openssl
+	rmdir 2>/dev/null $(DEST_INC) || true
 	@ #rm -f $(LIBCMP_DOCS_install)
-	rm -f $(DEST_DOC)/{OSSL_*{.pod,.gz},changelog.gz,copyright}
-	rmdir $(DEST_DOC) || true
+	rm -f $(DEST_MAN)/{OSSL_*{.pod,.gz},changelog.gz,copyright}
+	rmdir 2>/dev/null $(DEST_MAN) || true
 
 uninstall: clean_install
 
