@@ -194,9 +194,15 @@ To build the Debian packages, the following dependencies need to be installed:
 Currently [`CMakeLists.txt`](CMakeLists.txt) does not support Debian packaging.
 Yet [`Makefile_v1`](Makefile_v1) may be used like this:
 ```
-make -f Makefile_v1 deb
+ln -s Makefile_v1 Makefile
+make deb
 ```
-On success, they are placed in the parent directory (`../`).
+On success, the packages are placed in the parent directory (`../`).
+They may be installed for instance as follows:
+```
+sudo dpkg -i ../libcmp_*deb
+```
+If you built with OpenSSL 1.x, add the `--ignore-depends=libssl3` option.
 
 ## Disclaimer
 

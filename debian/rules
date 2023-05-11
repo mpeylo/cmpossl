@@ -12,6 +12,10 @@ AR=$(DEB_HOST_GNU_TYPE)-ar
 #override_dh_auto_configure:
 #	touch Makefile # trigger use of 'make' in dh_auto_build and dh_auto_install
 
+# make sure that Makefile_v1 is used
+override_dh_auto_clean:
+	make -f Makefile_v1 clean
+
 override_dh_auto_build:
 #	CFLAGS="-O2 -DNDEBUG" CXXFLAGS="-O2 -DNDEBUG" DEBUG_FLAGS="" LDFLAGS=""  # can be used to avoid dependency on libasan and libubsan
 	OPENSSL_DIR=/usr CC=$(CC) CXX=$(CXX) AR=$(AR) \
