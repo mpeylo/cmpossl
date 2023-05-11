@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(cmp)
+include(GNUInstallDirs)
 
 if(NOT DEFINED CMPOSSL_VERSION)
   set(CMPOSSL_VERSION_MAJOR 2)
@@ -62,6 +63,7 @@ set(INC_PUBLIC_HDRS
   ${INC_DIR}/openssl/safestack_backport.h
   ${INC_DIR}/openssl/openssl_backport.h
   ${INC_DIR}/openssl/http.h
+  ${INC_DIR}/openssl/httperr.h
 )
 
 add_library(${PROJECT_NAME} SHARED ${CMPOSSL_SRC})
@@ -103,6 +105,10 @@ if(DEFINED ENV{ROOTFS})
   set(CMAKE_INSTALL_PREFIX $ENV{ROOTFS} CACHE PATH "comment" FORCE)
 endif()
 
+install(DIRECTORY doc/man3
+  DESTINATION ${CMAKE_INSTALL_FULL_MANDIR}
+  )
+
 install(TARGETS ${PROJECT_NAME}
   LIBRARY
     DESTINATION lib
@@ -113,5 +119,5 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 if(NOT TARGET uninstall)
-  add_custom_target(uninstall COMMAND xargs rm -vf <install_manifest.txt)
+  add_custom_target(uninstall COMMAND xargs -I{} rm -vf $ENV{DESTDIR}{} <install_manifest.txt)
 endif()

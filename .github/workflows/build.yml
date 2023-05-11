@@ -7,18 +7,7 @@ name: CI
 on: push
 
 jobs:
-  cmake:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: cmake
-        run: |
-          cmake .
-          cmake --build .
-          cmake -DCMAKE_BUILD_TYPE=Release .
-          make clean build
-
-  build:
+  make:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -30,6 +19,21 @@ jobs:
           make -f Makefile_v1
           make -f Makefile_v1 clean
           make -f Makefile_v1 build
+          DESTDIR=tmp make -f Makefile_v1 install
+          DESTDIR=tmp make -f Makefile_v1 uninstall
+
+  cmake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: cmake
+        run: |
+          cmake .
+          cmake --build .
+          cmake -DCMAKE_BUILD_TYPE=Release .
+          make clean build
+          DESTDIR=tmp make install
+          DESTDIR=tmp make uninstall
 
   deb:
     runs-on: ubuntu-latest
