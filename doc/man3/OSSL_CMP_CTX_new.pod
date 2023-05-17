@@ -43,6 +43,7 @@ OSSL_CMP_CTX_set1_extraCertsOut,
 OSSL_CMP_CTX_set0_newPkey,
 OSSL_CMP_CTX_get0_newPkey,
 OSSL_CMP_CTX_set1_issuer,
+OSSL_CMP_CTX_set1_serialNumber,
 OSSL_CMP_CTX_set1_subjectName,
 OSSL_CMP_CTX_push1_subjectAltName,
 OSSL_CMP_CTX_set0_reqExtensions,
@@ -133,6 +134,7 @@ OSSL_CMP_CTX_set1_senderNonce
  int OSSL_CMP_CTX_set0_newPkey(OSSL_CMP_CTX *ctx, int priv, EVP_PKEY *pkey);
  EVP_PKEY *OSSL_CMP_CTX_get0_newPkey(const OSSL_CMP_CTX *ctx, int priv);
  int OSSL_CMP_CTX_set1_issuer(OSSL_CMP_CTX *ctx, const X509_NAME *name);
+ int OSSL_CMP_CTX_set1_serialNumber(OSSL_CMP_CTX *ctx, const ASN1_INTEGER *sn);
  int OSSL_CMP_CTX_set1_subjectName(OSSL_CMP_CTX *ctx, const X509_NAME *name);
  int OSSL_CMP_CTX_push1_subjectAltName(OSSL_CMP_CTX *ctx,
                                        const GENERAL_NAME *name);
@@ -559,6 +561,9 @@ private component then NULL is returned.
 
 OSSL_CMP_CTX_set1_issuer() sets the name of the intended issuer that
 will be set in the CertTemplate, i.e., the X509 name of the CA server.
+
+OSSL_CMP_CTX_set1_serialNumber() sets the serial number of the certificate
+to be revoked in Revocation Requests (RR).
 
 OSSL_CMP_CTX_set1_subjectName() sets the subject DN that will be used in
 the CertTemplate structure when requesting a new cert. For Key Update Requests
