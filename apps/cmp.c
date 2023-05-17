@@ -131,7 +131,7 @@ static char *opt_chainout = NULL;
 /* certificate enrollment and revocation */
 static char *opt_oldcert = NULL;
 static char *opt_issuer = NULL;
-static char *opt_serialnumber = NULL;
+static char *opt_serial = NULL;
 static int opt_revreason = CRL_REASON_NONE;
 
 /* credentials format */
@@ -211,7 +211,7 @@ typedef enum OPTION_choice {
     OPT_OUT_TRUSTED, OPT_IMPLICIT_CONFIRM, OPT_DISABLE_CONFIRM,
     OPT_CERTOUT, OPT_CHAINOUT,
 
-    OPT_OLDCERT, OPT_ISSUER, OPT_SERIALNUMBER, OPT_REVREASON,
+    OPT_OLDCERT, OPT_ISSUER, OPT_SERIAL, OPT_REVREASON,
 
 #ifndef OPENSSL_NO_SOCK
     OPT_SERVER, OPT_PROXY, OPT_NO_PROXY,
@@ -340,7 +340,7 @@ const OPTIONS cmp_options[] = {
      "DN of the issuer to place in the requested certificate template or rr "},
     {OPT_MORE_STR, 0, 0,
      "also used as recipient if neither -recipient nor -srvcert are given"},
-    {"serialnumber", OPT_SERIALNUMBER, 's',
+    {"serial", OPT_SERIAL, 's',
      "Serial number of certificate to be revoked in revocation request (rr)"},
     {"revreason", OPT_REVREASON, 'n',
      "Reason code to include in revocation request (rr); possible values:"},
@@ -571,7 +571,7 @@ static varref cmp_vars[] = { /* must be in same order as enumerated above! */
     {(char **)&opt_implicit_confirm}, {(char **)&opt_disable_confirm},
     {&opt_certout}, {&opt_chainout},
 
-    {&opt_oldcert}, {&opt_issuer}, {&opt_serialnumber}, {(char **)&opt_revreason},
+    {&opt_oldcert}, {&opt_issuer}, {&opt_serial}, {(char **)&opt_revreason},
 
 #ifndef OPENSSL_NO_SOCK
     {&opt_server}, {&opt_proxy}, {&opt_no_proxy},
@@ -1537,6 +1537,8 @@ static int setup_request_ctx(OSSL_CMP_CTX *ctx, ENGINE *engine)
             && opt_cmd != CMP_RR && opt_cmd != CMP_GENM)
         CMP_warn("no -subject given; no -csr or -oldcert or -cert available for fallback");
 
+    if (!set_name(opt_issuer, OSSL_CMP_CTX_set1_issuer, ctx, "issuer"))
+        return 0;
     if (opt_cmd == CMP_IR || opt_cmd == CMP_CR || opt_cmd == CMP_KUR) {
         if (opt_newkey == NULL && opt_key == NULL && opt_csr == NULL) {
             CMP_err("missing -newkey (or -key) to be certified and no -csr given");
@@ -1546,8 +1548,7 @@ static int setup_request_ctx(OSSL_CMP_CTX *ctx, ENGINE *engine)
             CMP_err("-certout not given, nowhere to save newly enrolled certificate");
             return 0;
         }
-        if (!set_name(opt_subject, OSSL_CMP_CTX_set1_subjectName, ctx, "subject")
-                || !set_name(opt_issuer, OSSL_CMP_CTX_set1_issuer, ctx, "issuer"))
+        if (!set_name(opt_subject, OSSL_CMP_CTX_set1_subjectName, ctx, "subject"))
             return 0;
     } else {
         const char *msg = "option is ignored for commands other than 'ir', 'cr', and 'kur'";
@@ -1586,30 +1587,29 @@ static int setup_request_ctx(OSSL_CMP_CTX *ctx, ENGINE *engine)
                       opt_subject, ref_cert != NULL ? ref_cert : opt_csr);
     }
     if (opt_cmd == CMP_RR) {
-        if (opt_issuer == NULL && opt_serialnumber == NULL) {
+        if (opt_issuer == NULL && opt_serial == NULL) {
             if (opt_oldcert == NULL && opt_csr == NULL) {
-                CMP_err("missing -oldcert for certificate to be revoked and no -csr given");
+                CMP_err("missing -oldcert or -issuer and -serial for certificate to be revoked and no -csr given");
                 return 0;
             }
             if (opt_oldcert != NULL && opt_csr != NULL)
                 CMP_warn("ignoring -csr since certificate to be revoked is given");
         } else {
-            if (opt_issuer == NULL || opt_serialnumber == NULL) {
-                LOG_err("Must give both -serialnumber and -issuer options or neither");
+#define OSSL_CMP_RR_MSG "since -issuer and -serial is given for command 'rr'"
+            if (opt_issuer == NULL || opt_serial == NULL) {
+                LOG_err("Must give both -issuer and -serial options or neither");
                 return 0;
             }
             if (opt_oldcert != NULL)
-                LOG_warn("Ignoring -oldcert since -serialnumber and -issuer is given for command 'rr'");
+                LOG_warn("Ignoring -oldcert " OSSL_CMP_RR_MSG);
             if (opt_csr != NULL)
-                LOG_warn("Ignoring -csr since -serialnumber and -issuer is given for command 'rr'");
+                LOG_warn("Ignoring -csr " OSSL_CMP_RR_MSG);
         }
-        if (!set_name(opt_issuer, OSSL_CMP_CTX_set1_issuer, ctx, "issuer"))
-            return 0;
-        if (opt_serialnumber != NULL) {
+        if (opt_serial != NULL) {
             ASN1_INTEGER *sno;
 
-            if ((sno = s2i_ASN1_INTEGER(NULL, opt_serialnumber)) == NULL) {
-                CMP_err1("cannot read serial number: '%s'", &opt_serialnumber);
+            if ((sno = s2i_ASN1_INTEGER(NULL, opt_serial)) == NULL) {
+                CMP_err1("cannot read serial number: '%s'", &opt_serial);
                 return 0;
             }
             if (!OSSL_CMP_CTX_set1_serialNumber(ctx, sno)) {
@@ -1623,8 +1623,8 @@ static int setup_request_ctx(OSSL_CMP_CTX *ctx, ENGINE *engine)
             (void)OSSL_CMP_CTX_set_option(ctx, OSSL_CMP_OPT_REVOCATION_REASON,
                                           opt_revreason);
     } else {
-        if (opt_serialnumber != NULL)
-            LOG_warn("Ignoring -serialnumber for command other than 'rr'");
+        if (opt_serial != NULL)
+            LOG_warn("Ignoring -serial for command other than 'rr'");
     }
     if (opt_cmd == CMP_P10CR && opt_csr == NULL) {
         CMP_err("missing PKCS#10 CSR for p10cr");
@@ -2537,9 +2537,6 @@ static int get_opts(int argc, char **argv)
         case OPT_SUBJECT:
             opt_subject = opt_str();
             break;
-        case OPT_ISSUER:
-            opt_issuer = opt_str();
-            break;
         case OPT_DAYS:
             opt_days = opt_int_arg();
             break;
@@ -2599,8 +2596,11 @@ static int get_opts(int argc, char **argv)
                 goto opthelp;
             }
             break;
-        case OPT_SERIALNUMBER:
-            opt_serialnumber = opt_arg();
+        case OPT_ISSUER:
+            opt_issuer = opt_str();
+            break;
+        case OPT_SERIAL:
+            opt_serial = opt_arg();
             break;
         case OPT_CERTFORM:
             opt_certform_s = opt_str();
