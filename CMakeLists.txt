@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(cmp)
-include(GNUInstallDirs)
 
 if(NOT DEFINED CMPOSSL_VERSION)
   set(CMPOSSL_VERSION_MAJOR 2)
@@ -11,6 +10,9 @@ endif()
 message(STATUS "CMPforOpenSSL version " ${CMPOSSL_VERSION})
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
+
+set(CMAKE_INSTALL_PREFIX "/usr") # must be set before include(GNUInstallDirs)
+include(GNUInstallDirs)
 
 if(NOT("$ENV{OPENSSL_DIR}" STREQUAL ""))
   message(STATUS "using OpenSSL from " $ENV{OPENSSL_DIR})

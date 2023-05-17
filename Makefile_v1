@@ -127,11 +127,10 @@ clean: clean_deb
 	@# rm -fr CMakeCache.txt *.cmake install_manifest.txt CMakeFiles/
 	rm -f $(OUT_DIR)/$(OUTLIB)*
 
-SYSTEM_LIB=/usr/lib
-SYSTEM_INCLUDE=/usr/include
-DEST_LIB=$(ROOTFS)$(SYSTEM_LIB)
-DEST_INC=$(ROOTFS)$(SYSTEM_INCLUDE)/cmp
-DEST_MAN=$(ROOTFS)/usr/share/man/man3
+DEST_PRE=$(ROOTFS)/usr
+DEST_LIB=$(DEST_PRE)/lib
+DEST_INC=$(DEST_PRE)/include/cmp
+DEST_MAN=$(DEST_PRE)/share/man/man3
 LIBCMP_DOCS_ = $(wildcard doc/man3/*.pod)
 
 .phony: install uninstall clean_install
@@ -161,7 +160,6 @@ uninstall: clean_install
 .phony: deb clean_deb
 deb:
 	@ #tar czf $(SRCS_TAR) $(SRCS)
-	@ #rm -f $(OUTLIB).$(VERSION) debian/tmp/usr/lib/libcmp.so*
 	debuild --preserve-envvar OPENSSL_DIR \
 	  -uc -us --lintian-opts --profile debian # --fail-on none
 	@ #rm $(SRCS_TAR)
