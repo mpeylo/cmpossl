@@ -2,20 +2,22 @@ Source: libcmp
 Section: libs
 Priority: optional
 Maintainer: David von Oheimb <David.von.Oheimb@siemens.com>
-Build-Depends: libssl-dev, debhelper (>= 9)
+Build-Depends: libssl-dev, debhelper (>= 9), devscripts
 Homepage: https://github.com/mpeylo/cmpossl
 Standards-Version: 4.5.1
 
 Package: libcmp
 Architecture: any
-Depends: libssl3, ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Section: libs
 Description: Certificate Management Prototocl (CMP) library
  Adds CMP support to OpenSSL in the form of an extra library
 
 Package: libcmp-dev
-Section: libdevel
+Section: devel
 Architecture: all
 Multi-Arch: foreign
-Depends: libcmp (>= 2.0), libssl-dev, ${misc:Depends}
-Description: libcmp C headers
- Only needed for development
+Depends: libcmp (>= 2.0), ${misc:Depends}
+Suggests: libssl-dev
+Description: libcmp C headers and documentation
+ Development support for standalone CMP library

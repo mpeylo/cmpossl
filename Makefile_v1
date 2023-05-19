@@ -56,7 +56,7 @@ else
 endif
 
 MAKECMDGOALS ?= default
-ifneq ($(filter-out doc update uninstall clean clean_install clean_deb,$(MAKECMDGOALS)),)
+ifneq ($(filter-out doc update uninstall clean clean_all clean_deb,$(MAKECMDGOALS)),)
     ifeq (,$(wildcard $(OPENSSL_DIR)/include/openssl))
         $(error cannot find directory '$(OPENSSL_DIR)/include/openssl', check OPENSSL_DIR variable)
     endif
@@ -111,7 +111,7 @@ LIBCMP_SRCS = $(patsubst %,crypto/crmf/%,$(CRMF_SRCS_)) \
     $(patsubst %,crypto/cmp/%,$(CMP_SRCS_)) \
     $(patsubst %,crypto/http/%,$(HTTP_SRCS_))
 
-.phony: build clean
+.phony: build clean clean_all
 
 $(OUT_DIR):
 	@mkdir -p $(OUT_DIR)
@@ -123,9 +123,14 @@ $(OUT_DIR)/$(OUTLIB).$(VERSION): $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL) 
 $(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	ln -sfr $(OUT_DIR)/$(OUTLIB){.$(VERSION),}
 
-clean: clean_deb
-	@# rm -fr CMakeCache.txt *.cmake install_manifest.txt CMakeFiles/
+clean:
 	rm -f $(OUT_DIR)/$(OUTLIB)*
+	rm -f *.3 *.3.gz
+
+clean_all: clean clean_deb
+	rm -fr Makefile CMakeCache.txt *.cmake CMakeFiles/
+	rm -f install_manifest*.txt
+	rm -f *.3{,.gz}
 
 DEST_PRE=$(ROOTFS)/usr
 DEST_LIB=$(DEST_PRE)/lib
@@ -133,7 +138,7 @@ DEST_INC=$(DEST_PRE)/include/cmp
 DEST_MAN=$(DEST_PRE)/share/man/man3
 LIBCMP_DOCS_ = $(wildcard doc/man3/*.pod)
 
-.phony: install uninstall clean_install
+.phony: install uninstall
 
 install: # $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	install -D $(OUT_DIR)/$(OUTLIB).$(VERSION) $(DEST_LIB)/$(OUTLIB).$(VERSION)
@@ -145,15 +150,13 @@ install: # $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	mkdir -p $(DEST_MAN)
 	install -D $(LIBCMP_DOCS_) $(DEST_MAN)
 
-clean_install:
+uninstall:
 	rm -f $(DEST_LIB)/$(OUTLIB)*
 	rm -rf $(DEST_INC)/openssl
 	rmdir 2>/dev/null $(DEST_INC) || true
 	@ #rm -f $(LIBCMP_DOCS_install)
 	rm -f $(DEST_MAN)/{OSSL_*{.pod,.gz},changelog.gz,copyright}
 	rmdir 2>/dev/null $(DEST_MAN) || true
-
-uninstall: clean_install
 
 #SRCS=$(shell ls Makefile_cmp include/openssl/{{cmp,crmf,http}{,err}.h,safestack_backport.h} crypto/{cmp,crmf,http}/*.{c,h})
 #SRCS_TAR=cmpossl_0.1.0.orig.tar.gz
@@ -167,6 +170,8 @@ deb:
 #	LD_LIBRARY_PATH= dpkg-buildpackage -uc -us # may prepend DH_VERBOSE=1
 
 clean_deb:
-	rm -rf debian/tmp debian/libcmp{,-dev}
+	rm -rf debian/{tmp,libcmp{,-dev}} debian-packaging
 	rm -f debian/{files,debhelper-build-stamp} debian/*.{log,substvars}
-	rm -f ../libcmp{_,-}*
+	rm -f ../libcmp*.{deb,dsc,build*,changes,tar.gz}
+	rm -fr _CPack_Packages changelog.gz
+	rm -f libcmp*.{deb,tar.gz}
