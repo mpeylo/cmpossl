@@ -1,6 +1,7 @@
 # Top level excludes
 apps/openssl
-attic
+attic/
+tmp/
 test/recipes/80-test_cmp_http_data/SimpleLra
 
 # Misc auto generated files
@@ -16,9 +17,12 @@ tmp.*
 CMakeCache.txt
 Makefile
 *.cmake
-install_manifest.txt
+install_manifest*.txt
+changelog.gz
+*.3
+*.3.gz
 CMakeFiles/
-
+_CPack_Packages/
 
 ##### Generic patterns
 # Auto generated assembly language source files
@@ -67,3 +71,5 @@ debian/tmp
 debian/libcmp
 debian/libcmp-dev
 debian/*.substvars
+*.deb
+*.tar.gz

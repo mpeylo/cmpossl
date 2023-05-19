@@ -28,12 +28,14 @@ jobs:
       - uses: actions/checkout@v3
       - name: cmake
         run: |
-          cmake .
+          mkdir build
+          cd build
+          cmake -S .. -B .
           cmake --build .
-          cmake -DCMAKE_BUILD_TYPE=Release .
+          cmake -DCMAKE_BUILD_TYPE=Release -S .. -B .
           make clean build
-          DESTDIR=tmp make install
-          DESTDIR=tmp make uninstall
+          DESTDIR=tmp make install uninstall
+          make deb
 
   deb:
     runs-on: ubuntu-latest

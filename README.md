@@ -44,7 +44,7 @@ also on a virtual machine or the Windows Subsystem for Linux ([WSL](https://docs
 
 The following network and development tools are needed or recommended.
 * Git (for getting the software, tested with versions 2.7.2, 2.11.0, 2.20, 2.30.2)
-* CMake (for using [`CMakeLists.txt`](CMakeLists.txt), tested with version 3.18.4)
+* CMake (for using [`CMakeLists.txt`](CMakeLists.txt), tested with versions 3.18.4 and 3.26.3)
 * GNU make (tested with versions 4.1, 4.2.1, 4.3)
 * GNU C compiler (gcc, tested with versions 5.4.0, 7.3.0, 8.3.0, 10.0.1, 10.2.1)
 
@@ -150,6 +150,7 @@ The result is in, for instance, `./libcmp.so.2.0`.
 When using CMake, `cmake` must be (re-)run
 after setting or unsetting environment variables.
 
+
 ## Using the library in own applications
 
 For compiling applications using the library,
@@ -179,30 +180,41 @@ sudo make uninstall
 
 The destination is `/usr`, unless specified otherwise by `DESTDIR` or `ROOTFS`.
 
+
 ## Building Debian packages
 
-This repository can build two Debian packages.
+This repository can build the following Debian and source packages.
 
-* `libcmp` - the shared library
-* `libcmp-dev` - development headers
+* `libcmp` -- the shared library
+* `libcmp-dev` -- development headers and documentation
+* `libcmp*Source.tar.gz` -- source tarball
 
-To build the Debian packages, the following dependencies need to be installed:
+The recommended way is to use CPack with files produced by CMake,
+for instance as follows:
+```
+make deb
+```
+
+The recommended way is to use CPack with the files produced by CMake as follows:
+```
+make deb
+```
+
+Alternatively, [`Makefile_v1`](Makefile_v1) may be used like this:
+```
+make -f Makefile_v1 deb
+```
+In this case, the resulting packages are placed in the parent directory (`../`),
+and the following dependencies need to be installed:
 * `debhelper` (needed for `dh`)
 * `devscripts` (needed for `debuild`)
 * `libssl-dev`
 
-Currently [`CMakeLists.txt`](CMakeLists.txt) does not support Debian packaging.
-Yet [`Makefile_v1`](Makefile_v1) may be used like this:
+The Debian packages may be installed for instance as follows:
 ```
-ln -s Makefile_v1 Makefile
-make deb
+sudo dpkg -i libcmp*deb
 ```
-On success, the packages are placed in the parent directory (`../`).
-They may be installed for instance as follows:
-```
-sudo dpkg -i ../libcmp_*deb
-```
-If you built with OpenSSL 1.x, add the `--ignore-depends=libssl3` option.
+
 
 ## Disclaimer
 
