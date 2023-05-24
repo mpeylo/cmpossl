@@ -1522,9 +1522,9 @@ static int setup_protection_ctx(OSSL_CMP_CTX *ctx, ENGINE *engine)
 }
 
 /*
- * set up IR/CR/KUR/CertConf/RR specific parts of the OSSL_CMP_CTX
- * based on options from config file/CLI.
- * Returns pointer on success, NULL on error
+ * Set up IR/CR/P10CR/KUR/CertConf/RR/GENM specific parts of the OSSL_CMP_CTX
+ * based on options from CLI and/or config file.
+ * Returns 1 on success, 0 on error
  */
 static int setup_request_ctx(OSSL_CMP_CTX *ctx, ENGINE *engine)
 {
