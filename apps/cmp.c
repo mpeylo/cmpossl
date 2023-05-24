@@ -337,7 +337,7 @@ const OPTIONS cmp_options[] = {
     {OPT_MORE_STR, 0, 0,
      "Issuer is used as recipient unless -recipient, -srvcert, or -issuer given"},
     {"issuer", OPT_ISSUER, 's',
-     "DN of the issuer to place in the requested certificate template or rr "},
+     "DN of the issuer to place in the certificate template of ir/cr/kur/rr;"},
     {OPT_MORE_STR, 0, 0,
      "also used as recipient if neither -recipient nor -srvcert are given"},
     {"serial", OPT_SERIAL, 's',
