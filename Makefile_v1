@@ -170,7 +170,7 @@ deb:
 #	LD_LIBRARY_PATH= dpkg-buildpackage -uc -us # may prepend DH_VERBOSE=1
 
 clean_deb:
-	rm -rf debian/{tmp,libcmp{,-dev}} debian-packaging
+	rm -rf debian/{.debhelper,tmp,libcmp{,-dev}} debian-packaging
 	rm -f debian/{files,debhelper-build-stamp} debian/*.{log,substvars}
 	rm -f ../libcmp*.{deb,dsc,build*,changes,tar.gz}
 	rm -fr _CPack_Packages changelog.gz
