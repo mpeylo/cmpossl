@@ -1,6 +1,7 @@
 #!/usr/bin/make
 
 # Optional OPENSSL_DIR defines where to find the OpenSSL installation (default: "/usr" or ".").
+# Optional OPENSSL_LIB defines where to find the OpenSSL library installation (default: ROOTFS/usr/lib or ".").
 # Optional CFLAGS and LDFLAGS are appended by local settings.
 # Optional DEBUG_FLAGS may set to prepend to local CFLAGS and LDFLAGS (default see below).
 # Builds are done in release mode if optional NDEBUG is defined.
@@ -163,7 +164,7 @@ uninstall:
 .phony: deb clean_deb
 deb:
 	@ #tar czf $(SRCS_TAR) $(SRCS)
-	debuild --preserve-envvar OPENSSL_DIR \
+	debuild -e OPENSSL_DIR="$(OPENSSL_DIR)" -e OPENSSL_LIB="$(OPENSSL_LIB)" \
 	  -uc -us --lintian-opts --profile debian # --fail-on none
 	@ #rm $(SRCS_TAR)
 # alternative:
