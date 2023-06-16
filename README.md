@@ -1,36 +1,41 @@
 # CMPforOpenSSL (cmpossl)
 
-This is a CMP and HTTP abstraction layer library based on OpenSSL.
-As opposed to the [Generic CMP Client](https://github.com/siemens/gencmpclient), this does not provide a CLI.
+This is an intermediate CMP, CRMF, and HTTP version abstraction library
+based on OpenSSL. It is needed as long as required CMP features
+are not yet (fully) available in the OpenSSL version being used.
 
+Note that this library does not provide a CLI.
+In case you need a CLI or want to use a more high-level C API for CMP, take
+advantage of the [Generic CMP Client](https://github.com/siemens/gencmpclient),
+which can be built on top of this library or on OpenSSL 3.0 or later.
 
 ## Purpose
 
 The purpose of this software is to provide a uniform interim CMP and HTTP client
-API as a standalone library that links with all current OpenSSL versions.
-The library aims at supporting all features of CMP version 3.
-The [generic CMP client](https://github.com/siemens/gencmpclient) is based on it.
+API and implementation library that links with all current OpenSSL versions.
 
 Since version 3.0, [OpenSSL](https://www.openssl.org/) includes
 an implementation of CMP version 2 and CRMF, as well as a lean HTTP client.
 Software that is based on earlier OpenSSL versions can make use of this library
 in order to use CMP and/or the HTTP client capabilities also with OpenSSL 1.x.
-<!--
-Yet also software based on OpenSSL 3.0+ can benefit from using this library
-because it provides uniform access to this functionaliy
-as well as enhancements not (yet) included in the latest OpenSSL release.
--->
 
+## Status
 
-## Status and changelog
+As of June 2023, the standardization of CMP version 3,
+see [Certificate Management Protocol (CMP) Updates
+](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-cmp-updates),
+is completed and is awaiting release at the IETF.
+Along with this document the [Lightweight CMP Profile (LCMPP)](
+https://datatracker.ietf.org/doc/html/draft-ietf-lamps-lightweight-cmp-profile)
+has been defined for simple and interoperable industrial use of CMP.
 
-As of late 2021, this CMP version is being standardized at the IETF, see
-[Certificate Management Protocol (CMP) Updates](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-cmp-updates)
-and is being geared towards simple and interoperable industrial use by the
-[Lightweight Certificate Management Protocol (CMP) Profile](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-lightweight-cmp-profile).
+This library meanwhile implements all features of CMP version 3
+as defined in [CMP Updates
+](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-cmp-updates)
+and detailed in the [LCMPP
+](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-lightweight-cmp-profile).
 
-Currently the new feature defined there are being implemented.
-
+Upstream contribution of the latest CMP features to OpenSSL is ongoing.
 
 ## Documentation
 
