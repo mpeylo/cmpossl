@@ -18,9 +18,16 @@ ifeq ($(OS),Windows_NT)
     LIB=bin
 else
 #   EXE=
-    DLL=.so
     OBJ=.o
     LIB=lib
+    ifeq ($(shell uname -s),Darwin)
+        OS=MacOS
+        DLL=.dylib
+        SONAME=install_name
+    else # assuming Linux
+        DLL=.so
+        SONAME=soname
+    endif
 endif
 
 ROOTFS ?= $(DESTDIR)$(prefix)
@@ -83,7 +90,13 @@ update:
 	git rebase origin
 
 LIBCMP_INC=include/cmp
-OUTLIB=libcmp$(DLL)
+OUTLIB_=libcmp
+OUTLIB=$(OUTLIB_)$(DLL)
+ifeq ($(OS),MacOS)
+    OUTLIBV=$(OUTLIB_).$(VERSION)$(DLL)
+else
+    OUTLIBV=$(OUTLIB).$(VERSION)
+endif
 
 CC ?= gcc
 ifdef NDEBUG
@@ -97,9 +110,9 @@ override CFLAGS += -isystem $(LIBCMP_INC) # important for taking precedence over
 override CFLAGS += -isystem $(OPENSSL_DIR)/include # use of -isystem is critical for selecting wanted OpenSSL version
 INCLUDE_OPENSSL_BACKPORT = -include $(LIBCMP_INC)/openssl/openssl_backport.h # used to force inclusion of standalone version
 
-override LDFLAGS += -L$(OPENSSL_LIB) -L$(OPENSSL)
+override LDFLAGS += -L $(OPENSSL_LIB) -L $(OPENSSL)
 ifeq ($(DEB_TARGET_ARCH),) # not during Debian packaging
-    override LDFLAGS += -Wl,-rpath=$(OPENSSL_RPATH_LIB) -Wl,-rpath=$(OPENSSL_RPATH)
+    override LDFLAGS += -Wl,-rpath $(OPENSSL_RPATH_LIB) -Wl,-rpath $(OPENSSL_RPATH)
 endif
 override LDLIBS  += -lcrypto
 
@@ -118,14 +131,14 @@ $(OUT_DIR):
 	@mkdir -p $(OUT_DIR)
 build: $(OUT_DIR) $(OUT_DIR)/$(OUTLIB)
 
-$(OUT_DIR)/$(OUTLIB).$(VERSION): $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL) $(LIBCMP_SRCS)
-	$(CC) -DCMP_STANDALONE $(CFLAGS) $(INCLUDE_OPENSSL_BACKPORT) $(LIBCMP_SRCS) $(LDFLAGS) $(LDLIBS) -shared -o $@ -Wl,-soname,$(OUTLIB).$(VERSION)
+$(OUT_DIR)/$(OUTLIBV): $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL) $(LIBCMP_SRCS)
+	$(CC) -DCMP_STANDALONE $(CFLAGS) $(INCLUDE_OPENSSL_BACKPORT) $(LIBCMP_SRCS) $(LDFLAGS) $(LDLIBS) -shared -o $@ -Wl,-$(SONAME),$(OUTLIBV)
 
-$(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIB).$(VERSION)
-	ln -sfr $(OUT_DIR)/$(OUTLIB){.$(VERSION),}
+$(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIBV)
+	ln -sf $(OUTLIBV) $(OUT_DIR)/$(OUTLIB)
 
 clean:
-	rm -f $(OUT_DIR)/$(OUTLIB)*
+	rm -fr $(OUT_DIR)/$(OUTLIB_)*$(DLL)*
 	rm -f *.3 *.3.gz
 
 clean_all: clean clean_deb
@@ -142,8 +155,8 @@ LIBCMP_DOCS_ = $(wildcard doc/man3/*.pod)
 .phony: install uninstall
 
 install: # $(OUT_DIR)/$(OUTLIB).$(VERSION)
-	install -D $(OUT_DIR)/$(OUTLIB).$(VERSION) $(DEST_LIB)/$(OUTLIB).$(VERSION)
-	ln -sfr $(DEST_LIB)/$(OUTLIB){.$(VERSION),}
+	install -D $(OUT_DIR)/$(OUTLIBV) $(DEST_LIB)/$(OUTLIBV)
+	ln -sf $(OUTLIBV) $(DEST_LIB)/$(OUTLIB)
 #install_headers:
 	mkdir -p $(DEST_INC)/openssl
 	install -D $(LIBCMP_INC)/openssl/*.h $(DEST_INC)/openssl
@@ -152,7 +165,7 @@ install: # $(OUT_DIR)/$(OUTLIB).$(VERSION)
 	install -D $(LIBCMP_DOCS_) $(DEST_MAN)
 
 uninstall:
-	rm -f $(DEST_LIB)/$(OUTLIB)*
+	rm -f $(DEST_LIB)/$(OUTLIB_)*$(DLL)*
 	rm -rf $(DEST_INC)/openssl
 	rmdir 2>/dev/null $(DEST_INC) || true
 	@ #rm -f $(LIBCMP_DOCS_install)

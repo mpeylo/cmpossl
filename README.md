@@ -45,13 +45,15 @@ API documentation is available in the [`doc/man3`](doc/man3) folder.
 ## Prerequisites
 
 This software should work with any flavor of Linux, including [Cygwin](https://www.cygwin.com/),
-also on a virtual machine or the Windows Subsystem for Linux ([WSL](https://docs.microsoft.com/windows/wsl/about)).
+also on a virtual machine or the Windows Subsystem for Linux ([WSL](https://docs.microsoft.com/windows/wsl/about)),
+and with MacOS.
 
 The following network and development tools are needed or recommended.
-* Git (for getting the software, tested with versions 2.7.2, 2.11.0, 2.20, 2.30.2)
-* CMake (for using [`CMakeLists.txt`](CMakeLists.txt), tested with versions 3.18.4 and 3.26.3)
-* GNU make (tested with versions 4.1, 4.2.1, 4.3)
+* Git (for getting the software, tested with versions 2.7.2, 2.11.0, 2.20, 2.30.2, 2.39.2)
+* CMake (for using [`CMakeLists.txt`](CMakeLists.txt), tested with versions 3.18.4, 3.26.3, 3.27.0)
+* GNU make (tested with versions 3.81, 4.1, 4.2.1, 4.3)
 * GNU C compiler (gcc, tested with versions 5.4.0, 7.3.0, 8.3.0, 10.0.1, 10.2.1)
+  or clang (tested with version 14.0.3)
 
 The following OSS components are used.
 * OpenSSL development edition (tested with versions 1.0.2, 1.1.0, 1.1.1, 3.0)
