@@ -51,7 +51,7 @@ ifeq ($(shell echo $(OPENSSL_DIR) | grep "^/"),)
 else
 # $(OPENSSL_DIR) is absolute path
     OPENSSL=$(OPENSSL_DIR)
-    OPENSSL_LIB ?= $(OPENSSL)/$(LIB)
+    OPENSSL_LIB ?= $(OPENSSL)
     OPENSSL_RPATH=$(OPENSSL_DIR)
     OPENSSL_RPATH_LIB=$(OPENSSL_LIB)
 endif
