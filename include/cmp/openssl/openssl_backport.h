@@ -26,7 +26,9 @@ _Pragma("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"")
 _Pragma("GCC diagnostic ignored \"-Wunused-parameter\"")
 # endif
 
-# define OSSL_DEPRECATEDIN_3_1
+# ifndef OSSL_DEPRECATEDIN_3_1
+#  define OSSL_DEPRECATEDIN_3_1
+# endif
 
 # include <openssl/e_os2.h> /* for ossl_inline etc. */
 # include <openssl/x509v3.h> /* for GENERAL_NAME, X509_ALGOR, etc. */
