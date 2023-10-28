@@ -83,11 +83,13 @@ target_include_directories(${LIBCMP_NAME} PRIVATE ${INC_DIR})
 # does not work for OpenSSL 3.0+:
 # add_definitions(-isystem ${INC_DIR})
 
-if(CMAKE_BUILD_TYPE MATCHES Release OR DEFINED ENV{NDEBUG})
-  message(STATUS "build mode: Release")
+if(DEFINED ENV{NDEBUG} OR NOT CMAKE_BUILD_TYPE MATCHES Debug)
+  set(CMAKE_BUILD_TYPE Release
+      CACHE STRING "Choose the type of build." FORCE)
   add_definitions(-DNDEBUG=1 -O2)
 else()
-  message(STATUS "build mode: Debug")
+  set(CMAKE_BUILD_TYPE Debug
+      CACHE STRING "Choose the type of build." FORCE)
   add_definitions(-g -O0)
 
   set(DEBUG_FLAGS "-fsanitize=address,undefined -fno-sanitize-recover=all") # must use quotes on MacOSX
@@ -95,6 +97,7 @@ else()
   link_libraries(${DEBUG_FLAGS})
   set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS} ${DEBUG_FLAGS}) # workarund for link_libraries() ignored on MacOSX
 endif()
+message(STATUS "build mode: ${CMAKE_BUILD_TYPE}")
 
 target_compile_options(${LIBCMP_NAME} PRIVATE
   -include ${INC_DIR}/openssl/openssl_backport.h -DCMP_STANDALONE

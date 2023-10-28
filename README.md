@@ -106,7 +106,7 @@ make update
 ```
 
 
-## Configuring and building
+## Configuring
 
 The library assumes that OpenSSL is already installed,
 including the C header files needed for development
@@ -128,6 +128,12 @@ for instance as follows:
 ```
 cmake .
 ```
+When using CMake, `cmake` must be (re-)run
+after setting or unsetting environment variables.
+By default, CMake builds are in Release mode.
+This may also be enforced by defining the environment variable `NDEBUG`.
+For switching to Debug mode, use `cmake` with `-DCMAKE_BUILD_TYPE=Debug`.
+The chosen mode is remembered in `CMakeCache.txt`.
 
 For backward compatibility it is also possible to use instead of CMake the
 pre-defined [`Makefile_v1`](Makefile_v1); to this end symlink it to `Makefile`:
@@ -136,26 +142,33 @@ ln -s Makefile_v1 Makefile
 ```
 or use for instance `make -f Makefile_v1`.
 
-In this case you may also specify using the environment variable `OUT_DIR`
+By default, builds using `Makefile_v1` are in Debug mode.
+Release mode can be selected by defining the environment variable `NDEBUG`.
+
+By default `Makefile_v1` behaves as if
+```
+OPENSSL_DIR=/usr
+```
+was given, such that the OpenSSL headers will be searched for in `/usr/include`
+and its shared objects in `/usr/lib` (or `/usr/bin` for Cygwin).
+
+When using [`Makefile_v1`](Makefile_v1),
+you may also specify using the environment variable `OUT_DIR`
 where the produced library files (e.g., `libcmp.so.2.0`) shall be placed.
 By default, the current directory (`.`) is used.\
 The environment variable `CC` may be set as needed; it defaults to `gcc`.\
 For further details on optional environment variables,
 see the [`Makefile_v1`](Makefile_v1).
 
+
+## Building
+
 Build the software with
 ```
 make
 ```
 
-By default, builds are done in Debug mode.
-For Release mode use `-DCMAKE_BUILD_TYPE=Release` or `NDEBUG=1`.
-For switching to Debug mode, use `-DCMAKE_BUILD_TYPE=Debug` and unset `NDEBUG`.
-
 The result is in, for instance, `./libcmp.so.2.0`.
-
-When using CMake, `cmake` must be (re-)run
-after setting or unsetting environment variables.
 
 
 ## Using the library in own applications
