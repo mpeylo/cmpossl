@@ -50,7 +50,7 @@ and with MacOS.
 
 The following network and development tools are needed or recommended.
 * Git (for getting the software, tested with versions 2.7.2, 2.11.0, 2.20, 2.30.2, 2.39.2)
-* CMake (for using [`CMakeLists.txt`](CMakeLists.txt), tested with versions 3.18.4, 3.26.3, 3.27.0)
+* CMake (for using [`CMakeLists.txt`](CMakeLists.txt), tested with versions 3.18.4, 3.26.3, 3.27.7)
 * GNU make (tested with versions 3.81, 4.1, 4.2.1, 4.3)
 * GNU C compiler (gcc, tested with versions 5.4.0, 7.3.0, 8.3.0, 10.0.1, 10.2.1)
   or clang (tested with version 14.0.3 and 17.0.3)
