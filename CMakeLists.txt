@@ -102,9 +102,11 @@ message(STATUS "build mode: ${CMAKE_BUILD_TYPE}")
 
 target_compile_options(${LIBCMP_NAME} PRIVATE
   -include ${INC_DIR}/openssl/openssl_backport.h -DCMP_STANDALONE
-  -DDEBUG_UNUSED -DPEDANTIC -pedantic -Wall -Wextra
-  -Wswitch -Wsign-compare -Wmissing-prototypes -Wstrict-prototypes
-  -Wshadow -Wformat -Wtype-limits -Wundef)
+  -DDEBUG_UNUSED -DPEDANTIC -pedantic
+  -Wall -Woverflow -Wextra -Wswitch -Wmissing-prototypes -Wstrict-prototypes
+  -Wformat -Wformat-security -Wtype-limits -Wundef -Wconversion
+  -Wsign-compare -Wpointer-arith -Wunused-parameter -Wshadow
+  -Wno-sign-conversion -Wno-shorten-64-to-32)
 
 set_property(TARGET ${LIBCMP_NAME} PROPERTY C_STANDARD 90)
 

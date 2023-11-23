@@ -105,7 +105,9 @@ ifdef NDEBUG
 else
     DEBUG_FLAGS ?= -g -O0 -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all # not every compiler(version) supports -Og
 endif
-override CFLAGS += $(DEBUG_FLAGS) -fPIC -DDEBUG_UNUSED -DPEDANTIC -pedantic -Wall -Wextra -Wswitch -Wsign-compare -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wformat -Wtype-limits -Wundef $(OSSL_VERSION_QUIRKS)# -Werror # not needed for cmp+crmf: -Wno-long-long -Wno-missing-field-initializers
+override CFLAGS += $(DEBUG_FLAGS) -fPIC -DDEBUG_UNUSED -DPEDANTIC -pedantic \
+  -Wall -Woverflow -Wextra -Wswitch -Wsign-compare -Wmissing-prototypes \
+  -Wstrict-prototypes -Wshadow -Wformat -Wtype-limits -Wundef $(OSSL_VERSION_QUIRKS)# -Werror
 override CFLAGS += -isystem $(LIBCMP_INC) # important for taking precedence over any (older) OpenSSL CMP headers
 override CFLAGS += -isystem $(OPENSSL_DIR)/include # use of -isystem is critical for selecting wanted OpenSSL version
 INCLUDE_OPENSSL_BACKPORT = -include $(LIBCMP_INC)/openssl/openssl_backport.h # used to force inclusion of standalone version
