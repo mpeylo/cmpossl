@@ -115,7 +115,7 @@ static int save_statusInfo(OSSL_CMP_CTX *ctx, OSSL_CMP_PKISI *si)
     return 1;
 }
 
-static int is_crep_with_waiting(OSSL_CMP_MSG *resp, int rid)
+static int is_crep_with_waiting(const OSSL_CMP_MSG *resp, int rid)
 {
     OSSL_CMP_CERTREPMESSAGE *crepmsg;
     OSSL_CMP_CERTRESPONSE *crep;
@@ -215,11 +215,11 @@ static int send_receive_check(OSSL_CMP_CTX *ctx, const OSSL_CMP_MSG *req,
         return 0;
 
     /*
-     * 'rep' can have the expected response type, which during polling is
-     * pollRep. When polling, also any other non-error response (the final
-     * response) is fine here. When not yet polling, delayed delivery may
-     * be started by an error with 'waiting' status (while it may also be
-     * started by an expected response type ip/cp/kup).
+     * rep can have the expected response type, which during polling is pollRep.
+     * When polling, also any other non-error response (the final response)
+     * is fine here. When not yet polling, delayed delivery may be initiated
+     * by the server returning an error message with 'waiting' status (or a
+     * response message of expected type ip/cp/kup with 'waiting' status).
      */
     if (bt == expected_type
         || (expected_type == OSSL_CMP_PKIBODY_POLLREP
@@ -277,8 +277,8 @@ static int send_receive_check(OSSL_CMP_CTX *ctx, const OSSL_CMP_MSG *req,
  * Returns -1 on receiving pollRep if sleep == 0, setting the checkAfter value.
  * Returns 1 on success and provides the received PKIMESSAGE in *rep.
  *           In this case the caller is responsible for freeing *rep.
- * Returns 0 on error (which includes the case that timeout has been reached or
- *           received response with waiting status).
+ * Returns 0 on error (which includes the cases that timeout has been reached
+ *           or a response with 'waiting' status has been received).
  */
 static int poll_for_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
                              OSSL_CMP_MSG **rep, int *checkAfter)
@@ -398,12 +398,12 @@ static int poll_for_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
 }
 
 static int save_senderNonce_if_waiting(OSSL_CMP_CTX *ctx,
-                                       OSSL_CMP_MSG *rep, int rid)
+                                       const OSSL_CMP_MSG *rep, int rid)
 {
     /*
-     * LWCMP section 4.4 states: the senderNonce of the preceding request
-     * message because this value will be needed for checking the recipNonce
-     * of the final response to be received after polling.
+     * Lightweight CMP Profile section 4.4 states: the senderNonce of the
+     * preceding request message because this value will be needed for checking
+     * the recipNonce of the final response to be received after polling.
      */
     if ((is_crep_with_waiting(rep, rid)
          || ossl_cmp_is_error_with_waiting(rep))
@@ -414,7 +414,7 @@ static int save_senderNonce_if_waiting(OSSL_CMP_CTX *ctx,
 }
 
 /*
- * send request and get response possibly with polling initiated by error msg.
+ * Send request and get response possibly with polling initiated by error msg.
  * Polling for ip/cp/kup/ with 'waiting' status is handled by cert_response().
  */
 static int send_receive_also_delayed(OSSL_CMP_CTX *ctx, const OSSL_CMP_MSG *req,
@@ -425,7 +425,7 @@ static int send_receive_also_delayed(OSSL_CMP_CTX *ctx, const OSSL_CMP_MSG *req,
         return 0;
 
     if (ossl_cmp_is_error_with_waiting(*rep)) {
-        if (!save_senderNonce_if_waiting(ctx, *rep, -1 /* rid */))
+        if (!save_senderNonce_if_waiting(ctx, *rep, OSSL_CMP_CERTREQID_NONE))
             return 0;
         /* not modifying ctx->status during certConf and error exchanges */
         if (expected_type != OSSL_CMP_PKIBODY_PKICONF
@@ -435,7 +435,7 @@ static int send_receive_also_delayed(OSSL_CMP_CTX *ctx, const OSSL_CMP_MSG *req,
         OSSL_CMP_MSG_free(*rep);
         *rep = NULL;
 
-        if (poll_for_response(ctx, 1 /* can sleep */, -1 /* rid */,
+        if (poll_for_response(ctx, 1 /* can sleep */, OSSL_CMP_CERTREQID_NONE,
                               rep, NULL /* checkAfter */) <= 0) {
             ERR_raise(ERR_LIB_CMP, CMP_R_POLLING_FAILED);
             return 0;
@@ -465,8 +465,8 @@ int ossl_cmp_exchange_certConf(OSSL_CMP_CTX *ctx, int certReqId,
     if (certConf == NULL)
         goto err;
 
-    res = send_receive_also_delayed(ctx, certConf,
-                                    &PKIconf, OSSL_CMP_PKIBODY_PKICONF);
+    res = send_receive_also_delayed(ctx, certConf, &PKIconf,
+                                    OSSL_CMP_PKIBODY_PKICONF);
 
  err:
     OSSL_CMP_MSG_free(certConf);
@@ -675,6 +675,7 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
         return 0;
 
  retry:
+    rcvd_type = OSSL_CMP_MSG_get_bodytype(*resp);
     crepmsg = (*resp)->body->value.ip; /* same for cp and kup */
     if (sk_OSSL_CMP_CERTRESPONSE_num(crepmsg->response) > 1) {
         ERR_raise(ERR_LIB_CMP, CMP_R_MULTIPLE_RESPONSES_NOT_SUPPORTED);
@@ -696,10 +697,10 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
             return 0;
         si = crep->status;
 
-        if (rid == -1) {
+        if (rid == OSSL_CMP_CERTREQID_NONE) {
             /* for OSSL_CMP_PKIBODY_P10CR learn CertReqId from response */
             rid = ossl_cmp_asn1_get_int(crep->certReqId);
-            if (rid == -1) {
+            if (rid != OSSL_CMP_CERTREQID_NONE) {
                 ERR_raise(ERR_LIB_CMP, CMP_R_BAD_REQUEST_ID);
                 return 0;
             }

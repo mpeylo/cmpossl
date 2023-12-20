@@ -1013,6 +1013,8 @@ int ossl_cmp_verify_popo(const OSSL_CMP_CTX *ctx,
                          const OSSL_CMP_MSG *msg, int accept_RAVerified);
 
 /* from cmp_client.c */
+/* expected max time per msg round trip, used for last try during polling: */
+# define OSSL_CMP_EXPECTED_RESP_TIME 2
 int ossl_cmp_exchange_certConf(OSSL_CMP_CTX *ctx, int certReqId,
                                int fail_info, const char *txt);
 int ossl_cmp_exchange_error(OSSL_CMP_CTX *ctx, int status, int fail_info,

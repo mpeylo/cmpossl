@@ -186,16 +186,15 @@ int ossl_cmp_mock_srv_set_checkAfterTime(OSSL_CMP_SRV_CTX *srv_ctx, int sec)
     return 1;
 }
 
-/* Determine whether to delay response to req */
-static int delayed_delivery(OSSL_CMP_SRV_CTX *srv_ctx,
-                            const OSSL_CMP_MSG *req)
+/* determine whether to delay response to (non-polling) request */
+static int delayed_delivery(OSSL_CMP_SRV_CTX *srv_ctx, const OSSL_CMP_MSG *req)
 {
     mock_srv_ctx *ctx = OSSL_CMP_SRV_CTX_get0_custom_ctx(srv_ctx);
     int req_type = OSSL_CMP_MSG_get_bodytype(req);
 
     if (ctx == NULL || req == NULL) {
         ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
-        return 0;
+        return -1;
     }
 
     /*
@@ -208,18 +207,17 @@ static int delayed_delivery(OSSL_CMP_SRV_CTX *srv_ctx,
         || req_type == OSSL_CMP_KUR
         /* Client may use error to abort the ongoing polling */
         || req_type == OSSL_CMP_ERROR)
-        return 0;
+        return -1;
 
     if (ctx->pollCount > 0 && ctx->curr_pollCount == 0) {
         /* start polling */
         if (ctx->req != NULL) { /* TODO: move this check to cmp_server.c */
             /* already in polling mode */
             ERR_raise(ERR_LIB_CMP, CMP_R_UNEXPECTED_PKIBODY);
-            return 0;
+            return -1;
         }
         if ((ctx->req = OSSL_CMP_MSG_dup(req)) == NULL)
             return -1;
-
         return 1;
     }
     return 0;
@@ -240,24 +238,24 @@ static int refcert_cmp(const X509 *refcert,
         && (ref_serial == NULL || ASN1_INTEGER_cmp(serial, ref_serial) == 0);
 }
 
-/* Reset the state that belongs to a transaction */
+/* reset the state that belongs to a transaction */
 static int clean_transaction(OSSL_CMP_SRV_CTX *srv_ctx,
                              ossl_unused const ASN1_OCTET_STRING *id)
 {
-    mock_srv_ctx *ctx = NULL;
+    mock_srv_ctx *ctx = OSSL_CMP_SRV_CTX_get0_custom_ctx(srv_ctx);
 
-    if (srv_ctx == NULL) {
+    if (ctx == NULL) {
         ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
         return 0;
     }
 
-    ctx = OSSL_CMP_SRV_CTX_get0_custom_ctx(srv_ctx);
     ctx->curr_pollCount = 0;
     OSSL_CMP_MSG_free(ctx->req);
     ctx->req = NULL;
     return 1;
 }
 
+/* return 0 on failure, 1 on success, setting *req or otherwise *check_after */
 static OSSL_CMP_PKISI *process_cert_request(OSSL_CMP_SRV_CTX *srv_ctx,
                                             const OSSL_CMP_MSG *cert_req,
                                             ossl_unused int certReqId,
@@ -275,6 +273,8 @@ static OSSL_CMP_PKISI *process_cert_request(OSSL_CMP_SRV_CTX *srv_ctx,
         ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
         return NULL;
     }
+    *req = NULL;
+
     if (ctx->sendError) {
         ERR_raise(ERR_LIB_CMP, CMP_R_ERROR_PROCESSING_MESSAGE);
         return NULL;
@@ -286,11 +286,6 @@ static OSSL_CMP_PKISI *process_cert_request(OSSL_CMP_SRV_CTX *srv_ctx,
 
     if (ctx->pollCount > 0 && ctx->curr_pollCount == 0) {
         /* start polling */
-        if (ctx->req != NULL) {
-            /* already in polling mode */
-            ERR_raise(ERR_LIB_CMP, CMP_R_UNEXPECTED_PKIBODY);
-            return NULL;
-        }
         if ((ctx->req = OSSL_CMP_MSG_dup(cert_req)) == NULL)
             return NULL;
         return OSSL_CMP_STATUSINFO_new(OSSL_CMP_PKISTATUS_waiting, 0, NULL);
@@ -463,6 +458,7 @@ static int process_certConf(OSSL_CMP_SRV_CTX *srv_ctx,
     return 1;
 }
 
+/* return 0 on failure, 1 on success, setting *req or otherwise *check_after */
 static int process_pollReq(OSSL_CMP_SRV_CTX *srv_ctx,
                            const OSSL_CMP_MSG *pollReq,
                            ossl_unused int certReqId,
@@ -470,22 +466,21 @@ static int process_pollReq(OSSL_CMP_SRV_CTX *srv_ctx,
 {
     mock_srv_ctx *ctx = OSSL_CMP_SRV_CTX_get0_custom_ctx(srv_ctx);
 
+    if (req != NULL)
+        *req = NULL;
     if (ctx == NULL || pollReq == NULL
             || req == NULL || check_after == NULL) {
         ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
         return 0;
     }
+
     if (ctx->sendError == 1
             || ctx->sendError == OSSL_CMP_MSG_get_bodytype(pollReq)) {
-        *req = NULL;
-y for all types of responses)
         ERR_raise(ERR_LIB_CMP, CMP_R_ERROR_PROCESSING_MESSAGE);
         return 0;
     }
-    if (ctx->req == NULL) { /* TODO: move this check to cmp_server.c */
-        /* not currently in polling mode */
-        *req = NULL;
-        ERR_raise(ERR_LIB_CMP, CMP_R_UNEXPECTED_PKIBODY);
+    if (ctx->req == NULL) { /* not currently in polling mode */
+        ERR_raise(ERR_LIB_CMP, CMP_R_UNEXPECTED_POLLREQ);
         return 0;
     }
 
@@ -495,7 +490,6 @@ y for all types of responses)
         ctx->req = NULL;
         *check_after = 0;
     } else {
-        *req = NULL;
         *check_after = ctx->checkAfterTime;
     }
     return 1;
@@ -510,8 +504,8 @@ OSSL_CMP_SRV_CTX *ossl_cmp_mock_srv_new(OSSL_LIB_CTX *libctx, const char *propq)
             && OSSL_CMP_SRV_CTX_init(srv_ctx, ctx, process_cert_request,
                                      process_rr, process_genm, process_error,
                                      process_certConf, process_pollReq)
-            && OSSL_CMP_SRV_CTX_setup_polling(srv_ctx, delayed_delivery,
-                                              clean_transaction))
+            && OSSL_CMP_SRV_CTX_init_trans(srv_ctx,
+                                           delayed_delivery, clean_transaction))
         return srv_ctx;
 
     mock_srv_ctx_free(ctx);
