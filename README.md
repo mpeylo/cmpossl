@@ -219,13 +219,14 @@ The recommended way is to use CPack with the files produced by CMake as follows:
 ```
 make deb
 ```
+which requries the `file` utility.
 
 Alternatively, [`Makefile_v1`](Makefile_v1) may be used like this:
 ```
 make -f Makefile_v1 deb
 ```
 In this case, the resulting packages are placed in the parent directory (`../`),
-and the following dependencies need to be installed:
+and requires the following Debian packages:
 * `debhelper` (needed for `dh`)
 * `devscripts` (needed for `debuild`)
 * `libssl-dev`
