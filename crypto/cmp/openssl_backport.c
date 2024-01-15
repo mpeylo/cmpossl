@@ -32,7 +32,10 @@ int ERR_load_strings_const(const ERR_STRING_DATA *str)
 }
 # endif
 
-ossl_unused static char osslv[] = OPENSSL_VERSION_TEXT; /* used for grepping */
+char *LIBCMP_OpenSSL_version(void)
+{
+    return OPENSSL_VERSION_TEXT; /* used for grepping version info */
+}
 
 /*
  * auxiliary function for incrementally reporting texts via the error queue
