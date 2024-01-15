@@ -19,6 +19,8 @@
 #  define CMP_STANDALONE
 # endif
 
+char *LIBCMP_OpenSSL_version(void); /* used for grepping version info */
+
 # if OPENSSL_VERSION_NUMBER < 0x10100000L
 # define ossl_inline inline
 /* compilation quirks for OpenSSL <= 1.0.2 */
