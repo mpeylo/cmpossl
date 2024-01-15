@@ -56,7 +56,8 @@ The following network and development tools are needed or recommended.
   or clang (tested with version 14.0.3 and 17.0.3)
 
 The following OSS components are used.
-* OpenSSL development edition (tested with versions 1.0.2, 1.1.0, 1.1.1, 3.0)
+* OpenSSL development edition; supported versions: 3.0, 3.1, 3.2
+  <!-- (formerly also versions 1.0.2, 1.1.0, and 1.1.1) -->
 
 For instance, on a Debian system the prerequisites may be installed simply as follows:
 ```
