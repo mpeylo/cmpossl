@@ -44,7 +44,7 @@ clean:
 else ifeq ($(LIB),h)
 
 
-OPENSSL_NUMBER_SEL=head -n 1 | sed -r 's/.*?OpenSSL //' | awk '{print ($$0+0)}'
+OPENSSL_NUMBER_SEL=head -n 1 | sed -r 's/.*OpenSSL //' | awk '{print ($$0+0)}'
 OPENSSLV_H=$(OPENSSL_DIR)/include/openssl/opensslv.h
 ifeq ($(shell fgrep OPENSSL_VERSION_MAJOR "$(OPENSSLV_H)"),)
 OPENSSL_VERSION=$(shell grep 'OPENSSL_VERSION_TEXT\s* "OpenSSL ' "$(OPENSSLV_H)" | $(OPENSSL_NUMBER_SEL))
@@ -60,7 +60,7 @@ endif
 else # $(LIB)
 
 
-OPENSSL_VERSION=$(shell strings "$(LIB)" | grep -E 'OpenSSL [0-9]+\.[0-9]+\.' | head -n 1 | sed -r 's/.*?OpenSSL //' | awk -v FS="." '{print $$1"."$$2}')
+OPENSSL_VERSION=$(shell strings "$(LIB)" | grep -E 'OpenSSL [0-9]+\.[0-9]+\.' | head -n 1 | sed -r 's/.*OpenSSL //' | awk -v FS="." '{print $$1"."$$2}')
 
 
 endif # $(LIB)
