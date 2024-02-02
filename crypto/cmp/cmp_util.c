@@ -56,7 +56,7 @@ void OSSL_CMP_log_close(void) /* is designed to be idempotent */
 static OSSL_CMP_severity parse_level(const char *level)
 {
     const char *end_level = strchr(level, ':');
-    int len;
+    long len;
     char level_copy[max_level_len + 1];
 
     if (end_level == NULL)
@@ -68,7 +68,7 @@ static OSSL_CMP_severity parse_level(const char *level)
     len = end_level - level;
     if (len > max_level_len)
         return -1;
-    OPENSSL_strlcpy(level_copy, level, len + 1);
+    OPENSSL_strlcpy(level_copy, level, (int)len + 1);
     return
         strcmp(level_copy, "EMERG") == 0 ? OSSL_CMP_LOG_EMERG :
         strcmp(level_copy, "ALERT") == 0 ? OSSL_CMP_LOG_ALERT :
@@ -178,7 +178,7 @@ void OSSL_CMP_print_errors_cb(OSSL_CMP_log_cb_t log_fn)
 
 #ifndef OPENSSL_NO_ERR
         if (ERR_SYSTEM_ERROR(err)) {
-            if (openssl_strerror_r(reason, rsbuf, sizeof(rsbuf)))
+            if (openssl_strerror_r((int)reason, rsbuf, sizeof(rsbuf)))
                 rs = rsbuf;
         } else {
             rs = ERR_reason_error_string(err);

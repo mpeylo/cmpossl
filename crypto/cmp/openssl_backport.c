@@ -121,7 +121,7 @@ void ossl_cmp_add_error_txt(const char *separator, const char *txt)
                 ERR_add_error_data(2, separator, tmp);
                 OPENSSL_free(tmp);
             }
-            put_error(ERR_LIB_CMP, func, err, file, line);
+            put_error(ERR_LIB_CMP, func, (int)err, file, line);
             txt = curr;
         } else {
             ERR_add_error_data(2, separator, txt);
