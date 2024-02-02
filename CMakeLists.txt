@@ -27,14 +27,12 @@ if(NOT("$ENV{OPENSSL_DIR}" STREQUAL ""))
   else()
     set(OPENSSL_LIB $ENV{OPENSSL_DIR})
   endif()
-  set(OpenSSL_INCLUDE_DIRS $ENV{OPENSSL_DIR}/include)
+  set(OPENSSL_INCLUDE_DIR $ENV{OPENSSL_DIR}/include)
   set(OPENSSL_LIBRARIES ${OPENSSL_LIB}/libssl${CMAKE_SHARED_LIBRARY_SUFFIX}
                         ${OPENSSL_LIB}/libcrypto${CMAKE_SHARED_LIBRARY_SUFFIX})
-  include_directories(SYSTEM ${OpenSSL_INCLUDE_DIRS})
 else()
   find_package(OpenSSL REQUIRED)
   message(STATUS "using OpenSSL package, with version " ${OPENSSL_VERSION})
-  include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 endif()
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/crypto)
@@ -79,9 +77,12 @@ set(INC_PUBLIC_HDRS
 add_library(${LIBCMP_NAME} SHARED ${LIBCMP_SRC})
 target_link_libraries(${LIBCMP_NAME} ${OPENSSL_LIBRARIES})
 
-target_include_directories(${LIBCMP_NAME} PRIVATE ${INC_DIR})
-# does not work for OpenSSL 3.0+:
-# include_directories(SYSTEM ${INC_DIR})
+# target_include_directories(${LIBCMP_NAME} PRIVATE ${INC_DIR})
+include_directories(SYSTEM ${INC_DIR})
+include_directories(SYSTEM ${CMAKE_SYSROOT}/usr/include/cmp)
+
+# must not add the system OpenSSL include dir before ${INC_DIR} etc.
+include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 
 if(DEFINED ENV{NDEBUG} OR NOT CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_BUILD_TYPE Release
