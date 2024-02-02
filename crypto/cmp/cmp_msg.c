@@ -24,6 +24,11 @@
 # define OSSL_CMP_PKISI_dup(si) OSSL_CMP_PKISI_dup((OSSL_CMP_PKISI *)(si)) /* hack */
 # define OSSL_CRMF_CERTID_dup(ci) OSSL_CRMF_CERTID_dup((OSSL_CRMF_CERTID *)(ci)) /* hack */
 # define ASN1_item_i2d(val, out, it) ASN1_item_i2d((ASN1_VALUE *)(val), out, it); /* hack */
+/*
+ * hack does not work because ASN1_i2d_bio_of is already a macro:
+# define ASN1_i2d_bio_of(T, f, b, m) \
+   ASN1_i2d_bio_of(T, ((int (*)(OSSL_CMP_MSG *, unsigned char **)))f, b, m)
+ */
 #endif
 
 #if OPENSSL_VERSION_NUMBER <= 0x30200000L
@@ -1252,7 +1257,14 @@ OSSL_CMP_MSG *d2i_OSSL_CMP_MSG_bio(BIO *bio, OSSL_CMP_MSG **msg)
 
 int i2d_OSSL_CMP_MSG_bio(BIO *bio, const OSSL_CMP_MSG *msg)
 {
+    /* need type cast for compatibility with OpenSSL 1.x */
+# if OPENSSL_VERSION_NUMBER < 0x30000000L
+    return ASN1_i2d_bio_of(OSSL_CMP_MSG,
+                           (int (*)(OSSL_CMP_MSG *, unsigned char **))
+                           i2d_OSSL_CMP_MSG, bio, msg);
+# else
     return ASN1_i2d_bio_of(OSSL_CMP_MSG, i2d_OSSL_CMP_MSG, bio, msg);
+# endif
 }
 
 int ossl_cmp_is_error_with_waiting(const OSSL_CMP_MSG *msg)
