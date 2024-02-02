@@ -99,24 +99,31 @@ static ossl_unused ossl_inline int \
 # endif
 
 # ifdef CMP_STANDALONE
+#  include <openssl/err.h>
+# endif
+# if OPENSSL_VERSION_NUMBER >= 0x10101000L || defined(CMP_STANDALONE)
+#  include "cmperr.h"
+# endif
+
+# ifdef CMP_STANDALONE
 #  if OPENSSL_VERSION_NUMBER < 0x10101000L
 #   include <openssl/err.h>
 int ERR_load_strings_const(const ERR_STRING_DATA *str);
 #  endif
 #  ifndef  ERR_LIB_HTTP
 #   define ERR_LIB_HTTP (ERR_LIB_USER - 3)
-int ossl_err_load_HTTP_strings(void);
 #  endif
+int ossl_err_load_HTTP_strings(void);
 #  ifndef  ERR_LIB_CRMF
 #   define ERR_LIB_CRMF (ERR_LIB_USER - 2)
-int ossl_err_load_CRMF_strings(void);
 #  endif
+int ossl_err_load_CRMF_strings(void);
 #  undef  CRMFerr
 #  define CRMFerr(f, r) ERR_PUT_error(ERR_LIB_CRMF, 0, (r), __FILE__, __LINE__)
 #  ifndef  ERR_LIB_CMP
 #   define ERR_LIB_CMP (ERR_LIB_USER - 1)
-int ossl_err_load_CMP_strings(void);
 #  endif
+int ossl_err_load_CMP_strings(void);
 #  undef  CMPerr
 #  define CMPerr(f, r) ERR_PUT_error(ERR_LIB_CMP, 0, (r), __FILE__, __LINE__)
 # endif
@@ -179,13 +186,6 @@ int X509_STORE_add_cert_dups(X509_STORE *ctx, X509 *x);
      * implementation although its OID 1.3.6.1.5.5.8.1.1 it is in the same OID
      * branch as NID_hmac_sha1
      */
-# endif
-
-# ifdef CMP_STANDALONE
-#  include <openssl/err.h>
-# endif
-# if OPENSSL_VERSION_NUMBER >= 0x10101000L || defined(CMP_STANDALONE)
-#  include "cmperr.h"
 # endif
 
 # if OPENSSL_VERSION_NUMBER < 0x10101000L
