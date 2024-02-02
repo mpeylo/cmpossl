@@ -676,20 +676,10 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
 
  retry:
     rcvd_type = OSSL_CMP_MSG_get_bodytype(*resp);
-    crepmsg = (*resp)->body->value.ip; /* same for cp and kup */
-    if (sk_OSSL_CMP_CERTRESPONSE_num(crepmsg->response) > 1) {
-        ERR_raise(ERR_LIB_CMP, CMP_R_MULTIPLE_RESPONSES_NOT_SUPPORTED);
-        return 0;
-    }
-    crep = ossl_cmp_certrepmessage_get0_certresponse(crepmsg, rid);
-    if (crep == NULL)
-        return 0;
-    if (!save_statusInfo(ctx, crep->status))
-        return 0;
-    if (rid == OSSL_CMP_CERTREQID_NONE) { /* used for OSSL_CMP_PKIBODY_P10CR */
-        rid = ossl_cmp_asn1_get_int(crep->certReqId);
-        if (rid != OSSL_CMP_CERTREQID_NONE) {
-            ERR_raise(ERR_LIB_CMP, CMP_R_BAD_REQUEST_ID);
+    if (IS_CREP(rcvd_type)) {
+        crepmsg = (*resp)->body->value.ip; /* same for cp and kup */
+        if (sk_OSSL_CMP_CERTRESPONSE_num(crepmsg->response) > 1) {
+            ERR_raise(ERR_LIB_CMP, CMP_R_MULTIPLE_RESPONSES_NOT_SUPPORTED);
             return 0;
         }
         crep = ossl_cmp_certrepmessage_get0_certresponse(crepmsg, rid);
@@ -700,7 +690,7 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
         if (rid == OSSL_CMP_CERTREQID_NONE) {
             /* for OSSL_CMP_PKIBODY_P10CR learn CertReqId from response */
             rid = ossl_cmp_asn1_get_int(crep->certReqId);
-            if (rid != OSSL_CMP_CERTREQID_NONE) {
+            if (rid < OSSL_CMP_CERTREQID_NONE) {
                 ERR_raise(ERR_LIB_CMP, CMP_R_BAD_REQUEST_ID);
                 return 0;
             }
