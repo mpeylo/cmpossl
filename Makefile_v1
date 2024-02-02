@@ -105,7 +105,9 @@ ifdef NDEBUG
 else
     DEBUG_FLAGS ?= -g -O0 -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all # not every compiler(version) supports -Og
 endif
-override CFLAGS += $(DEBUG_FLAGS) -fPIC -DDEBUG_UNUSED -DPEDANTIC -pedantic \
+override CFLAGS += $(DEBUG_FLAGS) -fPIC
+# override CFLAGS += -std=gnu90  # TODO maybe clean up code and re-enable flag
+override CFLAGS += -DDEBUG_UNUSED -DPEDANTIC -pedantic \
   -Wall -Woverflow -Wextra -Wswitch -Wsign-compare -Wmissing-prototypes \
   -Wstrict-prototypes -Wshadow -Wformat -Wtype-limits -Wundef $(OSSL_VERSION_QUIRKS)# -Werror
 override CFLAGS += -isystem $(LIBCMP_INC) # important for taking precedence over any (older) OpenSSL CMP headers

@@ -108,7 +108,8 @@ target_compile_options(${LIBCMP_NAME} PRIVATE
   -Wsign-compare -Wpointer-arith -Wunused-parameter -Wshadow
   -Wno-sign-conversion -Wno-shorten-64-to-32)
 
-set_property(TARGET ${LIBCMP_NAME} PROPERTY C_STANDARD 90)
+# TODO maybe clean up code and re-enable property
+# set_property(TARGET ${LIBCMP_NAME} PROPERTY C_STANDARD 90)
 
 set_target_properties(${LIBCMP_NAME} PROPERTIES
   VERSION ${LIBCMP_VERSION} SOVERSION ${LIBCMP_VERSION_MAJOR}
