@@ -27,7 +27,7 @@
 
 /* explicit #includes not strictly needed since implied by the above: */
 #  if OPENSSL_VERSION_NUMBER >= 0x30000000L
-#  include <openssl/types.h>
+#   include <openssl/types.h>
 #  endif
 #  include <openssl/safestack.h>
 #  include <openssl/x509.h>
