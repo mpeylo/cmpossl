@@ -91,6 +91,7 @@ update:
 
 LIBCMP_INC=include/cmp
 OUTLIB_=libcmp
+STATIC_OUTLIB=$(OUTLIB_).a
 OUTLIB=$(OUTLIB_)$(DLL)
 ifeq ($(OS),MacOS)
     OUTLIBV=$(OUTLIB_).$(VERSION)$(DLL)
@@ -105,7 +106,7 @@ ifdef NDEBUG
 else
     DEBUG_FLAGS ?= -g -O0 -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all # not every compiler(version) supports -Og
 endif
-override CFLAGS += $(DEBUG_FLAGS) -fPIC
+override CFLAGS += $(DEBUG_FLAGS)
 # override CFLAGS += -std=gnu90  # TODO maybe clean up code and re-enable flag
 override CFLAGS += -DDEBUG_UNUSED -DPEDANTIC -pedantic \
   -Wall -Woverflow -Wextra -Wswitch -Wsign-compare -Wmissing-prototypes \
@@ -113,6 +114,7 @@ override CFLAGS += -DDEBUG_UNUSED -DPEDANTIC -pedantic \
 override CFLAGS += -isystem $(LIBCMP_INC) # important for taking precedence over any (older) OpenSSL CMP headers
 override CFLAGS += -isystem $(OPENSSL_DIR)/include # use of -isystem is critical for selecting wanted OpenSSL version
 INCLUDE_OPENSSL_BACKPORT = -include $(LIBCMP_INC)/openssl/openssl_backport.h # used to force inclusion of standalone version
+LOCAL_CFLAGS = -fPIC -DCMP_STANDALONE $(INCLUDE_OPENSSL_BACKPORT)
 
 override LDFLAGS += -L $(OPENSSL_LIB) -L $(OPENSSL)
 ifeq ($(DEB_TARGET_ARCH),) # not during Debian packaging
@@ -136,16 +138,48 @@ LIBCMP_SRCS = $(patsubst %,crypto/crmf/%,$(CRMF_SRCS_)) \
 
 $(OUT_DIR):
 	@mkdir -p $(OUT_DIR)
-build: $(OUT_DIR) $(OUT_DIR)/$(OUTLIB)
+build: $(OUT_DIR) $(OUT_DIR)/$(OUTLIB) $(OUT_DIR)/$(STATIC_OUTLIB)
 
 $(OUT_DIR)/$(OUTLIBV): $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL) $(LIBCMP_SRCS)
-	$(CC) -DCMP_STANDALONE $(CFLAGS) $(INCLUDE_OPENSSL_BACKPORT) $(LIBCMP_SRCS) $(LDFLAGS) $(LDLIBS) -shared -o $@ -Wl,-$(SONAME)$(OUTLIBV)
+	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) $(LIBCMP_SRCS) $(LDFLAGS) $(LDLIBS) -shared -o $@ -Wl,-$(SONAME)$(OUTLIBV)
 
 $(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIBV)
 	ln -sf $(OUTLIBV) $(OUT_DIR)/$(OUTLIB)
 
+# Directory for object files, needed for STATIC_OUTLIB
+BUILDDIR=tmp
+# Build directory generation
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
+
+# Path for automatic lookup of source files by Make
+# Note: sort removes duplicate entries
+VPATH := crypto
+VPATH += $(sort $(dir $(wildcard crypto/*/)))
+
+# Target object files lookup in src directory (and mapping to build directory)
+OBJS := $(patsubst %.c,$(BUILDDIR)/%$(OBJ),$(notdir $(LIBCMP_SRCS)))
+
+# Order-only dependency for objects on build dir - prevents unnecessary rebuilds
+# (directories are flagged as changed on every object build)
+$(OBJS): | $(BUILDDIR)
+
+# Individual object targets; also provide dependencies on header files of the project (not on system headers)
+$(BUILDDIR)/%$(OBJ): %.c $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL)
+	 $(CC) $(CFLAGS) $(LOCAL_CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -MM $< -MT $@ -MF $(BUILDDIR)/$*.d
+DEPS = $(OBJS:$(OBJ)=.d)
+ifeq ($(findstring clean,$(MAKECMDGOALS)),)
+-include $(DEPS)
+endif
+
+$(OUT_DIR)/$(STATIC_OUTLIB): $(OBJS)
+	ar r $@ $(OBJS)
+
+
 clean:
-	rm -fr $(OUT_DIR)/$(OUTLIB_)*$(DLL)*
+	rm -fr $(OUT_DIR)/{$(OUTLIB_)*$(DLL)*,$(STATIC_OUTLIB)}
+	rm -fr $(BUILDDIR)
 	rm -f *.3 *.3.gz
 
 clean_all: clean clean_deb

@@ -154,7 +154,9 @@ was given, such that the OpenSSL headers will be searched for in `/usr/include`
 and its shared objects in `/usr/lib` (or `/usr/bin` for Cygwin).
 
 When using [`Makefile_v1`](Makefile_v1),
-you may also specify using the environment variable `OUT_DIR`
+both a dynamic and a static library (`libcmp.a`) are produced,
+and there are some extra options.
+You may specify using the environment variable `OUT_DIR`
 where the produced library files (e.g., `libcmp.so.2.0`) shall be placed.
 By default, the current directory (`.`) is used.\
 The environment variable `CC` may be set as needed; it defaults to `gcc`.\
