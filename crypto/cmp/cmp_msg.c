@@ -31,8 +31,6 @@
  */
 #endif
 
-#if OPENSSL_VERSION_NUMBER <= 0x30200000L
-
 OSSL_CMP_MSG *OSSL_CMP_MSG_new(OSSL_LIB_CTX *libctx, const char *propq)
 {
     OSSL_CMP_MSG *msg = NULL;
@@ -1276,4 +1274,3 @@ int ossl_cmp_is_error_with_waiting(const OSSL_CMP_MSG *msg)
             && ossl_cmp_pkisi_get_status(msg->body->value.error->pKIStatusInfo)
             == OSSL_CMP_PKISTATUS_waiting);
 }
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */

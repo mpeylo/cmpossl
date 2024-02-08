@@ -21,8 +21,6 @@
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
-#if OPENSSL_VERSION_NUMBER <= 0x30200000L
-
 /* Verify a message protected by signature according to RFC section 5.1.3.3 */
 static int verify_signature(const OSSL_CMP_CTX *cmp_ctx,
                             const OSSL_CMP_MSG *msg, X509 *cert)
@@ -907,4 +905,3 @@ int ossl_cmp_verify_popo(const OSSL_CMP_CTX *ctx,
     return 1;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */

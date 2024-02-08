@@ -25,8 +25,6 @@
 #include "internal/sockets.h"
 #include "internal/common.h" /* for ossl_assert() */
 
-#if OPENSSL_VERSION_NUMBER <= 0x30200000L
-
 #define HTTP_PREFIX "HTTP/"
 #define HTTP_VERSION_PATT "1." /* allow 1.x */
 #define HTTP_VERSION_STR_LEN sizeof(HTTP_VERSION_PATT) /* == strlen("1.0") */
@@ -1683,5 +1681,3 @@ int OSSL_HTTP_proxy_connect(BIO *bio, const char *server, const char *port,
     return ret;
 #undef BUF_SIZE
 }
-
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */

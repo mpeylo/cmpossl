@@ -122,8 +122,6 @@ ASN1_ADB(OSSL_CMP_ITAV) = {
     ADB_ENTRY(NID_id_it_certReqTemplate,
               ASN1_OPT(OSSL_CMP_ITAV, infoValue.certReqTemplate,
                        OSSL_CMP_CERTREQTEMPLATE)),
-#endif
-#if OPENSSL_VERSION_NUMBER >= 0x30200000L || OPENSSL_VERSION_NUMBER >= 0x30000000L
     ADB_ENTRY(NID_id_it_rootCaCert,
               ASN1_OPT(OSSL_CMP_ITAV, infoValue.rootCaCert, X509)),
     ADB_ENTRY(NID_id_it_certProfile,
