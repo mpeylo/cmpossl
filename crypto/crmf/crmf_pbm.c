@@ -27,8 +27,6 @@
 
 #include "crmf_local.h"
 
-#if OPENSSL_VERSION_NUMBER < 0x30200000L
-
 /*-
  * creates and initializes OSSL_CRMF_PBMPARAMETER (section 4.4)
  * |slen| SHOULD be at least 8 (16 is common)
@@ -257,5 +255,3 @@ int OSSL_CRMF_pbm_new(OSSL_LIB_CTX *libctx, const char *propq,
     }
     return 0;
 }
-
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */

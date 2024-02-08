@@ -34,8 +34,6 @@ TYPE *OSSL_CMP_CTX_get0_##NAME(const OSSL_CMP_CTX *ctx) \
     return ctx->FIELD; \
 }
 
-#if OPENSSL_VERSION_NUMBER <= 0x30200000L
-
 /*
  * Get current certificate store containing trusted root CA certs
  */
@@ -577,8 +575,6 @@ int OSSL_CMP_CTX_set1_##FIELD(OSSL_CMP_CTX *ctx, const TYPE *val) \
     return 1; \
 }
 
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */
-
 #define X509_invalid(cert) (!ossl_x509v3_cache_extensions(cert))
 #define EVP_PKEY_invalid(key) 0
 
@@ -601,8 +597,6 @@ int PREFIX##_set1_##FIELD(OSSL_CMP_CTX *ctx, TYPE *val) \
     ctx->FIELD = val; \
     return 1; \
 }
-
-#if OPENSSL_VERSION_NUMBER <= 0x30200000L
 
 #define DEFINE_OSSL_set1_up_ref(PREFIX, FIELD, TYPE)    \
 int PREFIX##_set1_##FIELD(OSSL_CMP_CTX *ctx, TYPE *val) \
@@ -644,9 +638,7 @@ int PREFIX##_set1_##FIELD(OSSL_CMP_CTX *ctx, TYPE *val) \
     return 1; \
 }
 
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */
 DEFINE_OSSL_set1_up_ref(ossl_cmp_ctx, validatedSrvCert, X509)
-#if OPENSSL_VERSION_NUMBER <= 0x30200000L
 
 /*
  * Pins the server certificate to be directly trusted (even if it is expired)
@@ -783,10 +775,8 @@ DEFINE_OSSL_CMP_CTX_set1(p10CSR, X509_REQ)
  */
 DEFINE_OSSL_set0(ossl_cmp_ctx, newCert, X509)
 
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */
 /* Get successfully validated server cert, if any, of current transaction */
 DEFINE_OSSL_CMP_CTX_get0(validatedSrvCert, X509)
-#if OPENSSL_VERSION_NUMBER <= 0x30200000L
 
 /*
  * Get the (newly received in IP/KUP/CP) client certificate from the context
@@ -1062,5 +1052,3 @@ int OSSL_CMP_CTX_get_option(const OSSL_CMP_CTX *ctx, int opt)
         return -1;
     }
 }
-
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */

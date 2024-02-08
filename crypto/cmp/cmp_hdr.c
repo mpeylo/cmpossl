@@ -20,8 +20,6 @@
 #include <openssl/cmp.h>
 #include <openssl/err.h>
 
-#if OPENSSL_VERSION_NUMBER <= 0x30300000L
-
 int ossl_cmp_hdr_set_pvno(OSSL_CMP_PKIHEADER *hdr, int pvno)
 {
     if (!ossl_assert(hdr != NULL))
@@ -370,5 +368,3 @@ int ossl_cmp_hdr_init(OSSL_CMP_CTX *ctx, OSSL_CMP_PKIHEADER *hdr)
 
     return 1;
 }
-
-#endif /* OPENSSL_VERSION_NUMBER <= 0x30200000L */
