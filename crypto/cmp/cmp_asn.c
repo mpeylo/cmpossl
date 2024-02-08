@@ -18,6 +18,11 @@
 #include <openssl/cmp.h>
 #include <openssl/crmf.h>
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+DECLARE_ASN1_DUP_FUNCTION(DIST_POINT_NAME)
+DECLARE_ASN1_DUP_FUNCTION(ASN1_TIME)
+#endif
+
 /* ASN.1 declarations from RFC4210 */
 ASN1_SEQUENCE(OSSL_CMP_REVANNCONTENT) = {
     /* OSSL_CMP_PKISTATUS is effectively ASN1_INTEGER so it is used directly */
@@ -170,6 +175,9 @@ ASN1_SEQUENCE(OSSL_CMP_CRLSTATUS) = {
 IMPLEMENT_ASN1_FUNCTIONS(OSSL_CMP_CRLSTATUS)
 
 IMPLEMENT_ASN1_DUP_FUNCTION(DIST_POINT_NAME)
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+IMPLEMENT_ASN1_DUP_FUNCTION(ASN1_TIME)
+#endif
 
 OSSL_CMP_ITAV *OSSL_CMP_ITAV_create(ASN1_OBJECT *type, ASN1_TYPE *value)
 {
@@ -500,9 +508,6 @@ OSSL_CMP_CRLSTATUS *OSSL_CMP_CRLSTATUS_new1(const DIST_POINT_NAME *dpn,
                                             const GENERAL_NAMES *issuer,
                                             const ASN1_TIME *thisUpdate)
 {
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-    return dpn == NULL && issuer == NULL && thisUpdate == NULL ? NULL : NULL;
-#else
     OSSL_CMP_CRLSOURCE *crlsource;
     OSSL_CMP_CRLSTATUS *crlstatus;
 
@@ -521,25 +526,40 @@ OSSL_CMP_CRLSTATUS *OSSL_CMP_CRLSTATUS_new1(const DIST_POINT_NAME *dpn,
 
     if (dpn != NULL) {
         crlsource->type = OSSL_CMP_CRLSOURCE_DPN;
-        if ((crlsource->value.dpn = DIST_POINT_NAME_dup(dpn)) == NULL)
+        if ((crlsource->value.dpn = DIST_POINT_NAME_dup(
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+                                                        (DIST_POINT_NAME *)
+#endif
+                                                        dpn)) == NULL)
             goto err;
     } else {
         crlsource->type = OSSL_CMP_CRLSOURCE_ISSUER;
         if ((crlsource->value.issuer =
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+             sk_GENERAL_NAME_deep_copy(issuer,
+                                       (sk_GENERAL_NAME_copyfunc)
+                                       GENERAL_NAME_dup,
+                                       GENERAL_NAME_free)
+#else
              sk_GENERAL_NAME_deep_copy(issuer, GENERAL_NAME_dup,
-                                       GENERAL_NAME_free)) == NULL)
+                                       GENERAL_NAME_free)
+#endif
+             ) == NULL)
             goto err;
     }
 
     if (thisUpdate != NULL
-            && (crlstatus->thisUpdate = ASN1_TIME_dup(thisUpdate)) == NULL)
+            && (crlstatus->thisUpdate = ASN1_TIME_dup(
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+                                                      (ASN1_TIME *)
+#endif
+                                                      thisUpdate)) == NULL)
         goto err;
     return crlstatus;
 
  err:
     OSSL_CMP_CRLSTATUS_free(crlstatus);
     return NULL;
-#endif
 }
 
 static GENERAL_NAMES *gennames_new(const X509_NAME *nm)
