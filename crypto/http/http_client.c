@@ -507,7 +507,8 @@ static int parse_http_line1(char *line, int *found_keep_alive)
         return retcode;
     default:
         err = HTTP_R_RECEIVED_ERROR;
-        if (!nonfatal_error(retcode) && retcode < 400)
+        if (retcode > INT_MAX
+            || (!nonfatal_error((int)retcode) && retcode < 400))
             err = HTTP_R_STATUS_CODE_UNSUPPORTED;
         if (*reason == '\0')
             ERR_raise_data(ERR_LIB_HTTP, err, "code=%s", code);
