@@ -108,7 +108,7 @@ int OSSL_CMP_validate_cert_path(const OSSL_CMP_CTX *ctx,
 {
     int valid = 0;
     X509_STORE_CTX *csc = NULL;
-    int err;
+    unsigned long err;
 
     if (ctx == NULL || cert == NULL) {
         ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
