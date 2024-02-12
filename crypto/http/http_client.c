@@ -449,7 +449,8 @@ static int parse_ulong(const char *key, const char *value,
  */
 static int parse_http_line1(char *line, int *found_keep_alive)
 {
-    int i, retcode, err;
+    int i, err;
+    unsigned long retcode;
     char *code, *reason, *end;
 
     if (!CHECK_AND_SKIP_PREFIX(line, HTTP_PREFIX_VERSION))
@@ -513,7 +514,8 @@ static int parse_http_line1(char *line, int *found_keep_alive)
         else
             ERR_raise_data(ERR_LIB_HTTP, err, "code=%s, reason=%s", code,
                            reason);
-        return retcode;
+        return retcode > INT_MAX ? HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR :
+            (int)retcode;
     }
 
  err:
@@ -633,7 +635,7 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
         }
 
         /* Write data to memory BIO */
-        if (BIO_write(rctx->mem, rctx->buf, n) != n)
+        if (n > INT_MAX || BIO_write(rctx->mem, rctx->buf, (int)n) != n)
             return 0;
     }
 
@@ -659,12 +661,16 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
     case OHS_WRITE_REQ:
         /* Copy some chunk of data from rctx->req to rctx->wbio */
 
+        if (rctx->len_to_send > INT_MAX) {
+            rctx->state = OHS_ERROR;
+            return 0;
+        }
         if (rctx->len_to_send > 0) {
             if (OSSL_TRACE_ENABLED(HTTP)
-                && rctx->state == OHS_WRITE_HDR && rctx->len_to_send <= INT_MAX)
+                && rctx->state == OHS_WRITE_HDR)
                 OSSL_TRACE2(HTTP, "%.*s", (int)rctx->len_to_send, rctx->pos);
 
-            i = BIO_write(rctx->wbio, rctx->pos, rctx->len_to_send);
+            i = BIO_write(rctx->wbio, rctx->pos, (int)rctx->len_to_send);
             if (i <= 0) {
                 if (BIO_should_retry(rctx->wbio))
                     return -1;
@@ -1300,7 +1306,8 @@ BIO *OSSL_HTTP_get_ex(const char *url, const char *proxy, const char *no_proxy,
 
         rctx = OSSL_HTTP_open(server, port, proxy, no_proxy,
                               use_ssl, bio, rbio, bio_update_fn, arg,
-                              buf_size, timeout > INT_MAX ? INT_MAX : timeout);
+                              buf_size,
+                              timeout > INT_MAX ? INT_MAX : (int)timeout);
         (void)OSSL_HTTP_set_overall_timeout(rctx, timeout);
     new_rpath:
         if (rctx != NULL) {
@@ -1458,7 +1465,8 @@ BIO *OSSL_HTTP_transfer_ex(OSSL_HTTP_REQ_CTX **prctx,
     if (rctx == NULL)
         rctx = OSSL_HTTP_open(server, port, proxy, no_proxy,
                               use_ssl, bio, rbio, bio_update_fn, arg,
-                              buf_size, timeout > INT_MAX ? INT_MAX : timeout);
+                              buf_size,
+                              timeout > INT_MAX ? INT_MAX : (int)timeout);
     if (rctx == NULL)
         goto err;
     (void)OSSL_HTTP_set_overall_timeout(rctx, timeout);
@@ -1522,10 +1530,10 @@ static char *base64encode(const void *buf, size_t len)
         outl++;
     outl <<= 2;
     out = OPENSSL_malloc(outl + 1);
-    if (out == NULL)
+    if (out == NULL || len > INT_MAX)
         return 0;
 
-    i = EVP_EncodeBlock((unsigned char *)out, buf, len);
+    i = EVP_EncodeBlock((unsigned char *)out, buf, (int)len);
     if (!ossl_assert(0 <= i && (size_t)i <= outl)) {
         OPENSSL_free(out);
         return NULL;
