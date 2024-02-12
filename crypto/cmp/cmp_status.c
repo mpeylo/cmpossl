@@ -245,7 +245,7 @@ char *OSSL_CMP_snprint_PKIStatusInfo(const OSSL_CMP_PKISI *statusInfo,
 
     failure_info = ossl_cmp_pkisi_get_pkifailureinfo(statusInfo);
 
-    return snprint_PKIStatusInfo_parts(ASN1_INTEGER_get(statusInfo->status),
+    return snprint_PKIStatusInfo_parts((int)ASN1_INTEGER_get(statusInfo->status),
                                        failure_info,
                                        statusInfo->statusString, buf, bufsize);
 }
