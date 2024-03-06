@@ -91,19 +91,15 @@ include_directories(SYSTEM ${CMAKE_SYSROOT}/usr/include/cmp)
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 
 if(DEFINED ENV{NDEBUG} OR NOT CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_BUILD_TYPE Release
+  set(CMAKE_BUILD_TYPE Release  # automatically leads to CFLAGS += -DNDEBUG -O3
       CACHE STRING "Choose the type of build." FORCE)
-  add_compile_options(-O2)
-  add_compile_definitions(NDEBUG=1)
 else()
-  set(CMAKE_BUILD_TYPE Debug
+  set(CMAKE_BUILD_TYPE Debug  # automatically leads to CFLAGS += -g  # -O0 not added by default
       CACHE STRING "Choose the type of build." FORCE)
-  add_compile_options(-g -O0)
-
-  set(DEBUG_FLAGS "-fsanitize=address,undefined -fno-sanitize-recover=all") # must use quotes on MacOSX
-  add_compile_options(${DEBUG_FLAGS})
-  link_libraries(${DEBUG_FLAGS})
-  set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS} ${DEBUG_FLAGS}) # workarund for link_libraries() ignored on MacOSX
+  target_compile_options(${LIBCMP_NAME} PRIVATE -O0)
+  set(SANITIZER_FLAGS -fsanitize=address,undefined -fno-sanitize-recover=all)
+  target_compile_options(${LIBCMP_NAME} PRIVATE ${SANITIZER_FLAGS})
+  target_link_options   (${LIBCMP_NAME} PRIVATE ${SANITIZER_FLAGS})
 endif()
 message(STATUS "build mode: ${CMAKE_BUILD_TYPE}")
 
