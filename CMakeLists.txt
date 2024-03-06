@@ -182,8 +182,15 @@ if(NOT TARGET uninstall)
 endif()
 
 
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  set(EXT "deb")
+  set(GEN "DEB")
+else()
+  set(EXT "zip")
+  set(GEN "ZIP")
+endif()
 if(NOT DEFINED CPACK_PACKAGE_NAME)
-# generate Debian packages using CPack, relying on installation defined above
+# generate Debian etc. packages using CPack, relying on installation defined above
 
 SET(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 SET(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/mpeylo/cmpossl")
@@ -201,11 +208,12 @@ Adds CMP support to OpenSSL in the form of an extra library")
 set(CPACK_COMPONENT_DEV_DESCRIPTION "libcmp C headers and documentation
 Development support for standalone CMP library")
 
-if(APPLE)
-  set(CPACK_GENERATOR "Bundle")
-  set(CPACK_BUNDLE_NAME "${PROJECT_NAME}")
-else()
-set(CPACK_GENERATOR "DEB")
+#if(APPLE)
+#  set(CPACK_GENERATOR "Bundle")
+#  set(CPACK_BUNDLE_NAME "${PROJECT_NAME}")
+#else()
+set(CPACK_GENERATOR ${GEN})
+
 set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_LIB_PACKAGE_NAME "${PROJECT_NAME}")
@@ -222,7 +230,7 @@ set(CPACK_DEBIAN_DEV_PACKAGE_SUGGESTS "libssl-dev")
 # CPack Deb does not create postinst when installing to /usr/lib/x86_64-linux-gnu
 set(CPACK_DEBIAN_LIB_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/extra/triggers")
 set(CPACK_DEBIAN_LIB_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
-endif() # Apple
+#endif(APPLE)
 
 set(CPACK_SOURCE_GENERATOR "TGZ")
 #set(CPACK_SET_DESTDIR TRUE) # prevents package creation error when using cpack
@@ -234,6 +242,7 @@ set(CPACK_SOURCE_IGNORE_FILES
   \\.git$
   \\.deb$
   \\.gz$
+  \\.zip$
   \\.so
   \\.dylib$
   /attic/
@@ -276,19 +285,17 @@ foreach(component IN LISTS CPACK_COMPONENTS_ALL)
     )
 endforeach()
 
-if(NOT TARGET deb)
-  if(NOT APPLE)
-    set (deb_pack_full_name
-      "${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_NAME}-dev_${CPACK_PACKAGE_VERSION}_all.deb")
-  endif()
+if(NOT TARGET ${EXT})
+  set (pack_full_name
+       "${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_NAME}-dev_${CPACK_PACKAGE_VERSION}_all.${EXT}")
   add_custom_command(
-    OUTPUT "${deb_pack_full_name}"
+    OUTPUT "${pack_full_name}"
     DEPENDS build
     COMMENT "Building packages possibly including doxygen run"
     COMMAND cpack # --config CPackConfig.cmake
     COMMAND cpack --config CPackSourceConfig.cmake
     )
-  add_custom_target(deb DEPENDS ${deb_pack_full_name})
+  add_custom_target(${EXT} DEPENDS ${pack_full_name})
 endif()
 
 endif(NOT DEFINED CPACK_PACKAGE_NAME)
