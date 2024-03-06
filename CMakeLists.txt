@@ -12,13 +12,6 @@ message(STATUS "CMPforOpenSSL version ${LIBCMP_VERSION}")
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
-if(APPLE)
-  set(CMAKE_INSTALL_PREFIX "tmp")
-else()
-  set(CMAKE_INSTALL_PREFIX "/usr")
-endif()
-include(GNUInstallDirs) # CMAKE_INSTALL_PREFIX must be set before
-
 # https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
 if(NOT "$ENV{OPENSSL_DIR}" STREQUAL "")
   set(OPENSSL_ROOT_DIR $ENV{OPENSSL_DIR})
@@ -125,6 +118,12 @@ endif()
 
 # installation and uninstall
 
+#if(UNIX AND NOT APPLE)
+#  set(CMAKE_INSTALL_PREFIX "/usr")
+#else()
+#  set(CMAKE_INSTALL_PREFIX "tmp")
+#endif()
+include(GNUInstallDirs) # CMAKE_INSTALL_PREFIX must be set before
 if(DEFINED ENV{ROOTFS})
   set(CMAKE_INSTALL_PREFIX $ENV{ROOTFS} CACHE PATH "comment" FORCE)
 endif()
@@ -143,10 +142,10 @@ endif()
 
 install(TARGETS ${LIBCMP_NAME}
   LIBRARY
-    DESTINATION  "${CMAKE_INSTALL_FULL_LIBDIR}"
+    DESTINATION  "${CMAKE_INSTALL_LIBDIR}"
     COMPONENT lib
   PUBLIC_HEADER
-    DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}/${LIBCMP_NAME}/openssl"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBCMP_NAME}/openssl"
     COMPONENT dev
 )
 
@@ -174,7 +173,7 @@ set(pages
   OSSL_CRMF_MSG_set0_validity
   )
 foreach(page ${pages})
-  POD2MAN("${CMAKE_CURRENT_SOURCE_DIR}/doc/man3" ${page} 3 "${CMAKE_INSTALL_FULL_MANDIR}" dev)
+  POD2MAN("${CMAKE_CURRENT_SOURCE_DIR}/doc/man3" ${page} 3 "${CMAKE_INSTALL_MANDIR}" dev)
 endforeach()
 
 if(NOT TARGET uninstall)
@@ -280,7 +279,7 @@ foreach(component IN LISTS CPACK_COMPONENTS_ALL)
   install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright"
     "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
-    DESTINATION "${CMAKE_INSTALL_FULL_DOCDIR}${suffix}"
+    DESTINATION "${CMAKE_INSTALL_DOCDIR}${suffix}"
     COMPONENT ${component}
     )
 endforeach()
