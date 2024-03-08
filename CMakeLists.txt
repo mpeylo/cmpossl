@@ -123,22 +123,10 @@ endif()
 #else()
 #  set(CMAKE_INSTALL_PREFIX "tmp")
 #endif()
-include(GNUInstallDirs) # CMAKE_INSTALL_PREFIX must be set before
 if(DEFINED ENV{ROOTFS})
   set(CMAKE_INSTALL_PREFIX $ENV{ROOTFS} CACHE PATH "comment" FORCE)
 endif()
-
-# see also https://gitlab.kitware.com/cmake/cmake/-/issues/24929 and
-# https://stackoverflow.com/questions/46490448/how-i-can-add-a-changelog-in-deb-with-cmake
-add_custom_command(
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
-    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
-    > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
-)
-if(NOT TARGET changelog)
-  add_custom_target(changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
-endif()
+include(GNUInstallDirs) # CMAKE_INSTALL_PREFIX must be set before
 
 install(TARGETS ${LIBCMP_NAME}
   LIBRARY
@@ -181,13 +169,6 @@ if(NOT TARGET uninstall)
 endif()
 
 
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-  set(EXT "deb")
-  set(GEN "DEB")
-else()
-  set(EXT "zip")
-  set(GEN "ZIP")
-endif()
 if(NOT DEFINED CPACK_PACKAGE_NAME)
 # generate Debian etc. packages using CPack, relying on installation defined above
 
@@ -207,29 +188,48 @@ Adds CMP support to OpenSSL in the form of an extra library")
 set(CPACK_COMPONENT_DEV_DESCRIPTION "libcmp C headers and documentation
 Development support for standalone CMP library")
 
-#if(APPLE)
-#  set(CPACK_GENERATOR "Bundle")
-#  set(CPACK_BUNDLE_NAME "${PROJECT_NAME}")
-#else()
-set(CPACK_GENERATOR ${GEN})
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  set(CPACK_GENERATOR "DEB")
+  set(EXT "deb")
 
-set(CPACK_DEB_COMPONENT_INSTALL ON)
-set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
-set(CPACK_DEBIAN_LIB_PACKAGE_NAME "${PROJECT_NAME}")
-set(CPACK_DEBIAN_DEV_PACKAGE_ARCHITECTURE "all")
-set(CPACK_DEBIAN_LIB_PACKAGE_SECTION "libs")
-set(CPACK_DEBIAN_DEV_PACKAGE_SECTION "devel")
-set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
-set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON)
-set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS "${CMAKE_CURRENT_BINARY_DIR}")
-set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "libcmp (>= ${CPACK_PACKAGE_VERSION})")
-set(CPACK_DEBIAN_DEV_PACKAGE_SUGGESTS "libssl-dev")
-# see also https://gitlab.kitware.com/cmake/cmake/-/issues/21834
-# CPack Deb does not create postinst when installing to /usr/lib/x86_64-linux-gnu
-set(CPACK_DEBIAN_LIB_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/extra/triggers")
-set(CPACK_DEBIAN_LIB_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
-#endif(APPLE)
+  # see also https://gitlab.kitware.com/cmake/cmake/-/issues/24929 and
+  # https://stackoverflow.com/questions/46490448/how-i-can-add-a-changelog-in-deb-with-cmake
+  add_custom_command(
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
+    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
+    > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
+  )
+  if(NOT TARGET changelog)
+    add_custom_target(changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+  endif()
+
+  set(CPACK_DEB_COMPONENT_INSTALL ON)
+  set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+  set(CPACK_DEBIAN_LIB_PACKAGE_NAME "${PROJECT_NAME}")
+  set(CPACK_DEBIAN_DEV_PACKAGE_ARCHITECTURE "all")
+  set(CPACK_DEBIAN_LIB_PACKAGE_SECTION "libs")
+  set(CPACK_DEBIAN_DEV_PACKAGE_SECTION "devel")
+  set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
+  set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON)
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS "${CMAKE_CURRENT_BINARY_DIR}")
+  set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "libcmp (>= ${CPACK_PACKAGE_VERSION})")
+  set(CPACK_DEBIAN_DEV_PACKAGE_SUGGESTS "libssl-dev")
+  # see also https://gitlab.kitware.com/cmake/cmake/-/issues/21834
+  # CPack Deb does not create postinst when installing to /usr/lib/x86_64-linux-gnu
+  set(CPACK_DEBIAN_LIB_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian  /extra/triggers")
+  set(CPACK_DEBIAN_LIB_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
+else()
+  #if(APPLE)
+  #  set(CPACK_GENERATOR "Bundle")
+  #  set(EXT "bundle")
+  #  set(CPACK_BUNDLE_NAME "${PROJECT_NAME}")
+  #else()
+    set(CPACK_GENERATOR "ZIP")
+    set(EXT "zip")
+  #endif(APPLE)
+endif()
 
 set(CPACK_SOURCE_GENERATOR "TGZ")
 #set(CPACK_SET_DESTDIR TRUE) # prevents package creation error when using cpack
