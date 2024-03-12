@@ -169,6 +169,31 @@ if(NOT TARGET uninstall)
 endif()
 
 
+# cleaning
+
+# https://stackoverflow.com/questions/9680420/looking-for-a-cmake-clean-command-to-clear-up-cmake-output/78133906#78133906
+
+set_property(
+  DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  APPEND
+  PROPERTY ADDITIONAL_CLEAN_FILES
+      # only works for predefined names as globbing would be done on cmake run
+      install_manifest.txt install_manifest_dev.txt install_manifest_lib.txt
+      _CPack_Packages changelog.gz debian/.debhelper/
+      )
+
+if(NOT TARGET clean_all)
+  add_custom_target(clean_all
+    COMMAND ${CMAKE_BUILD_TOOL} clean
+    COMMAND find . -name "*.o" -o -regex "./libcmp-.*" | xargs rm
+    # after the following, cannot call this target again:
+    COMMAND find . ( -name "*.cmake" -o -name Makefile ) | xargs rm
+    COMMAND find . -name CMakeFiles | xargs rm -r
+    COMMAND rm CMakeCache.txt
+    VERBATIM
+  )
+endif()
+
 if(NOT DEFINED CPACK_PACKAGE_NAME)
 # generate Debian etc. packages using CPack, relying on installation defined above
 
@@ -276,12 +301,14 @@ foreach(component IN LISTS CPACK_COMPONENTS_ALL)
   else()
     set(suffix "-${component}")
   endif()
-  install(FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright"
-    "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
-    DESTINATION "${CMAKE_INSTALL_DOCDIR}${suffix}"
-    COMPONENT ${component}
+  if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    install(FILES
+      "${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright"
+      "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
+      DESTINATION "${CMAKE_INSTALL_DOCDIR}${suffix}"
+      COMPONENT ${component}
     )
+  endif()
 endforeach()
 
 if(NOT TARGET ${EXT})

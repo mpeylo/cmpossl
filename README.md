@@ -204,6 +204,11 @@ sudo make uninstall
 The destination is `/usr`, unless specified otherwise by `DESTDIR` or `ROOTFS`.
 
 
+### Cleaning up
+
+`make clean` removes part of the artifacts, while
+`make clean_all` removes everything produced by `make` and `CMake`.
+
 ## Building Debian packages
 
 This repository can build the following Debian and source packages.
