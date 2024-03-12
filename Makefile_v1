@@ -180,12 +180,11 @@ $(OUT_DIR)/$(STATIC_OUTLIB): $(OBJS)
 clean:
 	rm -fr $(OUT_DIR)/{$(OUTLIB_)*$(DLL)*,$(STATIC_OUTLIB)}
 	rm -fr $(BUILDDIR)
-	rm -f *.3 *.3.gz
+	rm -f *.3{,.gz} libcmp-*
 
 clean_all: clean clean_deb
 	rm -fr Makefile CMakeCache.txt *.cmake CMakeFiles/
 	rm -f install_manifest*.txt
-	rm -f *.3{,.gz}
 
 DEST_PRE=$(ROOTFS)/usr
 DEST_LIB=$(DEST_PRE)/lib
