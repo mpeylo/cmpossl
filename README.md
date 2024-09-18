@@ -184,7 +184,7 @@ For linking you will need to refer the linker to the library, e.g., `-lcmp`
 and add the directory (e.g., with the linker option `-L`) where it can be found.
 See also the environment variable `OUT_DIR`.
 For helping the Linux loader to find the libraries at run time,
-it is recommended to set also linker options like `-Wl,-rpath=.`.
+it is recommended to set also linker options like `-Wl,-rpath,.`.
 
 Also make sure that the OpenSSL libraries (typically referred to via `-lssl -lcrypto`) are in your library path and
 (the version) of the libraries found there by the linker match the header files found by the compiler.
