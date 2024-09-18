@@ -21,21 +21,21 @@ in order to use CMP and/or the HTTP client capabilities also with OpenSSL 1.x.
 
 ## Status
 
-As of June 2023, the standardization of CMP version 3,
-see [Certificate Management Protocol (CMP) Updates
-](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-cmp-updates),
-is completed and is awaiting release at the IETF.
-Along with this document the [Lightweight CMP Profile (LCMPP)](
-https://datatracker.ietf.org/doc/html/draft-ietf-lamps-lightweight-cmp-profile)
+In November 2023, the standardization of CMP version 3 was is completed.
+Along with
+[Certificate Management Protocol (CMP) Updates](https://www.rfc-editor.org/rfc/rfc9480).
+the [Lightweight CMP Profile (LCMPP)](https://www.rfc-editor.org/rfc/rfc9483)
 has been defined for simple and interoperable industrial use of CMP.
 
-This library meanwhile implements all features of CMP version 3
-as defined in [CMP Updates
-](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-cmp-updates)
-and detailed in the [LCMPP
-](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-lightweight-cmp-profile).
+This library implements all features of CMP version 3
+as defined in CMP Updates and in the LCMPP.
 
-Upstream contribution of the latest CMP features to OpenSSL is ongoing.
+As of October 2024,
+upstream contribution of the latest CMP features to OpenSSL is nearly finished.
+Version 3.4 contains all of them except for central key generation.
+The successor of both RFC 4210 and CMP Updates, called
+[RFC 4210bis](https://datatracker.ietf.org/doc/draft-ietf-lamps-rfc4210bis/),
+has been submitted to IESG for Publication.
 
 ## Documentation
 
