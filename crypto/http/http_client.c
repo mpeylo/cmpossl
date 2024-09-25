@@ -85,7 +85,7 @@ struct ossl_http_req_ctx_st {
 #define OHS_ADD_HEADERS    (1 | OHS_NOREAD) /* Adding header lines to request */
 #define OHS_WRITE_INIT     (2 | OHS_NOREAD) /* 1st call: ready to start send */
 #define OHS_WRITE_HDR      (3 | OHS_NOREAD) /* Request header being sent */
-#define OHS_WRITE_REQ      (4 | OHS_NOREAD) /* Request contents being sent */
+#define OHS_WRITE_REQ      (4 | OHS_NOREAD) /* Request content (body) being sent */
 #define OHS_FLUSH          (5 | OHS_NOREAD) /* Request being flushed */
 #define OHS_FIRSTLINE       1 /* First line of response being read */
 #define OHS_HEADERS         2 /* MIME headers of response being read */
@@ -668,6 +668,7 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
             if (OSSL_TRACE_ENABLED(HTTP)
                 && rctx->state == OHS_WRITE_HDR)
                 OSSL_TRACE2(HTTP, "%.*s", (int)rctx->len_to_send, rctx->pos);
+            /* this usually traces several lines at once */
 
             i = BIO_write(rctx->wbio, rctx->pos, (int)rctx->len_to_send);
             if (i <= 0) {
@@ -682,6 +683,8 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
         }
         if (rctx->state == OHS_WRITE_HDR) {
             (void)BIO_reset(rctx->mem);
+            OSSL_TRACE(HTTP, "Sending request body\n");
+            /* will not trace request body (for CMP, it is binary) */
             rctx->state = OHS_WRITE_REQ;
         }
         if (rctx->req != NULL && !BIO_eof(rctx->req)) {
@@ -759,7 +762,7 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
             OSSL_TRACE1(HTTP, "%s", buf);
         }
 
-        /* First line */
+        /* First line in response header */
         if (rctx->state == OHS_FIRSTLINE) {
             rctx->status = parse_http_line1(buf, &found_keep_alive);
             switch (rctx->status) {
@@ -852,6 +855,8 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
             }
             rctx->flags &= ~OSSL_HTTP_FLAG_ENABLE_KEEP_ALIVE;
         }
+        OSSL_TRACE(HTTP, "Received response body\n");
+        /* will not trace response body (for CMP, it is binary) */
 
         if (rctx->state == OHS_ERROR) {
             if (OSSL_TRACE_ENABLED(HTTP)
