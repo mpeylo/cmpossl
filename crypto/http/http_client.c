@@ -756,8 +756,7 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
 
         /* dump all response header lines */
         if (OSSL_TRACE_ENABLED(HTTP)) {
-            if ((rctx->state == OHS_FIRSTLINE && strstr(buf, " 200") == NULL)
-                    || rctx->state == OHS_ERROR)
+            if (rctx->state == OHS_FIRSTLINE || rctx->state == OHS_ERROR)
                 OSSL_TRACE(HTTP, "Received response header:\n");
             OSSL_TRACE1(HTTP, "%s", buf);
         }
