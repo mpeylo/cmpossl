@@ -22,7 +22,8 @@
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/trace.h>
 #endif
-#if OPENSSL_VERSION_NUMBER < 0x30000000L || 1 /* no more use trace API here as it is very hard to enable */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L /* for OpenSSL < 3.0 the follwoing defines are needed */ \
+    || 1 /* yet do not use the trace API also for OpenSSL >= 3.0 as it is hard to enable there */
 # define OSSL_TRACE_PREFIX(category) "cmpClient " #category ": "
 # undef OSSL_TRACE_ENABLED
 # define OSSL_TRACE_ENABLED(category) (strstr(getenv("OPENSSL_TRACE"), #category) != NULL)
