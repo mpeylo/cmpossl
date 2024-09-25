@@ -22,6 +22,17 @@
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/trace.h>
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x30000000L || 1 /* no more use trace API here as it is very hard to enable */
+# define OSSL_TRACE_PREFIX(category) "cmpClient " #category ": "
+# undef OSSL_TRACE_ENABLED
+# define OSSL_TRACE_ENABLED(category) (strstr(getenv("OPENSSL_TRACE"), #category) != NULL)
+# undef OSSL_TRACE
+# define OSSL_TRACE(category, msg) fprintf(stderr, OSSL_TRACE_PREFIX(category) "%s", msg)
+# undef OSSL_TRACE1
+# define OSSL_TRACE1(category, msg, arg1) fprintf(stderr, OSSL_TRACE_PREFIX(category) msg, arg1)
+# undef OSSL_TRACE2
+# define OSSL_TRACE2(category, msg, arg1, arg2) fprintf(stderr, OSSL_TRACE_PREFIX(category) msg, arg1, arg2)
+#endif
 #include "internal/sockets.h"
 #include "internal/common.h" /* for ossl_assert() */
 
