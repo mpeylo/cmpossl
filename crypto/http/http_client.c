@@ -25,8 +25,9 @@
 #if OPENSSL_VERSION_NUMBER < 0x30000000L /* for OpenSSL < 3.0 the follwoing defines are needed */ \
     || 1 /* yet do not use the trace API also for OpenSSL >= 3.0 as it is hard to enable there */
 # define OSSL_TRACE_PREFIX(category) "cmpClient " #category ": "
+inline static char * strstr_NULL(const char *s, const char *t) { return s == NULL ? NULL : strstr(s, t); }
 # undef OSSL_TRACE_ENABLED
-# define OSSL_TRACE_ENABLED(category) (strstr(getenv("OPENSSL_TRACE"), #category) != NULL)
+# define OSSL_TRACE_ENABLED(category) (strstr_NULL(getenv("OPENSSL_TRACE"), #category) != NULL)
 # undef OSSL_TRACE
 # define OSSL_TRACE(category, msg) fprintf(stderr, OSSL_TRACE_PREFIX(category) "%s", msg)
 # undef OSSL_TRACE1
