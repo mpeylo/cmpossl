@@ -936,7 +936,6 @@ int X509_STORE_add_cert_dups(X509_STORE *ctx, X509 *x)
 }
 #endif
 
-# if OPENSSL_VERSION_NUMBER <= 0x30200000L
 X509_ALGOR *ossl_X509_ALGOR_from_nid(int nid, int ptype, void *pval)
 {
     ASN1_OBJECT *algo = OBJ_nid2obj(nid);
@@ -955,7 +954,6 @@ X509_ALGOR *ossl_X509_ALGOR_from_nid(int nid, int ptype, void *pval)
     ASN1_OBJECT_free(algo);
     return NULL;
 }
-# endif
 
 #if OPENSSL_VERSION_NUMBER < 0x30200000L
 /* copied from ../x509/x_pubkey.c: */
