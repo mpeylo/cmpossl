@@ -49,14 +49,14 @@ also on a virtual machine or the Windows Subsystem for Linux ([WSL](https://docs
 and with MacOS.
 
 The following network and development tools are needed or recommended.
-* Git (for getting the software, tested with versions 2.7.2, 2.11.0, 2.20, 2.30.2, 2.39.2)
-* CMake (for using [`CMakeLists.txt`](CMakeLists.txt), tested with versions 3.18.4, 3.26.3, 3.27.7)
-* GNU make (tested with versions 3.81, 4.1, 4.2.1, 4.3)
-* GNU C compiler (gcc, tested with versions 5.4.0, 7.3.0, 8.3.0, 10.0.1, 10.2.1)
-  or clang (tested with version 14.0.3 and 17.0.3)
+* Git (for getting the software, tested versions include 2.7.2, 2.11.0, 2.20, 2.30.2, 2.39.2, 2.47.0)
+* CMake (for using [`CMakeLists.txt`](CMakeLists.txt), tested versions include 3.18.4, 3.26.3, 3.27.7)
+* GNU make (tested versions include 3.81, 4.1, 4.2.1, 4.3)
+* GNU C compiler (gcc, tested versions include 5.4.0, 7.3.0, 8.3.0, 10.0.1, 10.2.1, 12.2.0)
+  or clang (tested versions include 14.0.3, 17.0.3, 19.1.1)
 
 The following OSS components are used.
-* OpenSSL development edition; supported versions: 3.0, 3.1, 3.2
+* OpenSSL development edition; curently supported versions include 3.0, 3.1, 3.2, 3.3, 3.4
   <!-- (formerly also versions 1.0.2, 1.1.0, and 1.1.1) -->
 
 For instance, on a Debian system the prerequisites may be installed simply as follows:
@@ -65,22 +65,38 @@ sudo apt install libssl-dev libc-dev linux-libc-dev
 ```
 while `apt install git make gcc` usually is not needed as far as these tools are pre-installed.
 
-As a sanity check you can execute in a shell:
+As a sanity check whether OpenSSL is usable for building the library,
+you can execute in a shell on a Unix-like system:
 ```
 git clone git@github.com:mpeylo/cmpossl.git --depth 1
 cd cmpossl
 make -f OpenSSL_version.mk
 ```
-This should output on the console something like
+
+This should give various diagnostic output,
+on success ending with a line giving the detected OpenSSL version like
 ```
+...
 cc [...] OpenSSL_version.c -lcrypto -o OpenSSL_version
-OpenSSL 3.0.8 7 Feb 2023 (0x30000080)
+...
+OpenSSL 3.0.13 30 Jan 2024 (0x300000d0)
 ```
 
-You might need to set the variable `OPENSSL_DIR` first as described below, e.g.,
+You may need to set the variable `OPENSSL_DIR` first as described [below](#configuring), e.g.,
 ```
 export OPENSSL_DIR=/usr/local
 ```
+
+When having trouble building, which may be due to unsuitably set environment variables,
+this can provide useful information.
+
+When getting version mismatch errors like
+```
+OpenSSL runtime version 0x304000d0 does not match version 0x300000d0 used by compiler
+```
+make sure that the system-level configuration for finding header and library files
+as well as the optional environment variables `OPENSSL_DIR` and `OPENSSL_LIB`
+described [below](#configuring) are set up in a consistent way.
 
 ## Getting the software
 
@@ -111,18 +127,27 @@ make update
 
 The library assumes that OpenSSL is already installed,
 including the C header files needed for development
-(as provided by, e.g., the Debian/Ubuntu package `libssl-dev`).
+(as provided by, e.g., the Debian/Ubuntu package `libssl-dev` or the MacOS brew package `openssl@3`).
 
 By default any OpenSSL installation available on the system is used.
-Set the optional environment variable `OPENSSL_DIR` to specify the
-absolute (or relative to `../`) path of the OpenSSL installation to use, e.g.:
+
+It is recommended to set the optional environment variable `OPENSSL_DIR` to specify
+the absolute or relative path of the OpenSSL installation to use, e.g.,
 ```
 export OPENSSL_DIR=/usr/local
 ```
-In case its libraries are in a different location, set also `OPENSSL_LIB`, e.g.:
+or some heuristics will try to detect the location.
+This must point to the location in the file system from which the subdirectory `include/openssl`
+is directly accessible with this relative path name.\
+In case its libraries are in a different location than in the subdirectory `lib`,
+it is recommended to set also `OPENSSL_LIB`, e.g.,
 ```
-export OPENSSL_LIB=$OPENSSL_DIR/lib
+export OPENSSL_LIB=/lib/aarch64-linux-gnu
 ```
+or some heuristics will try to detect the location.
+
+For all environment variables specifying a directory, relative paths such as `.`
+are interpreted relative to the CMPforOpenSSL source directory.
 
 Since version 2, it is recommended to use CMake to produce the `Makefile`,
 for instance as follows:
