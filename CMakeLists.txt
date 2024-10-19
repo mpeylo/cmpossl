@@ -12,25 +12,39 @@ message(STATUS "CMPforOpenSSL version ${LIBCMP_VERSION}")
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
-# https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
-if(NOT "$ENV{OPENSSL_DIR}" STREQUAL "")
-  set(OPENSSL_ROOT_DIR $ENV{OPENSSL_DIR})
-  set(OPENSSL_INCLUDE_DIR "$ENV{OPENSSL_DIR}/include")
-  set(OPENSSL_LIB $ENV{OPENSSL_DIR})
+# improved from https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
+if(NOT DEFINED OPENSSL_ROOT_DIR AND NOT "$ENV{OPENSSL_DIR}" STREQUAL "")
+  get_filename_component(OPENSSL_ROOT_DIR "$ENV{OPENSSL_DIR}" ABSOLUTE)
+  set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
 endif()
-if(DEFINED ENV{OPENSSL_LIB})
-  set(OPENSSL_LIB $ENV{OPENSSL_LIB})
+if(NOT DEFINED OPENSSL_FOUND) # not already done by superordinate module
+  if(DEFINED OPENSSL_ROOT_DIR)
+    find_package(OpenSSL HINTS "${OPENSSL_ROOT_DIR}" NO_DEFAULT_PATH REQUIRED COMPONENTS Crypto) # SSL not needed here
+  else()
+    find_package(OpenSSL REQUIRED COMPONENTS Crypto) # SSL not needed for libcmp
+  endif()
+  STRING(REGEX REPLACE "/libcrypto\..*" "" OPENSSL_LIB "${OPENSSL_CRYPTO_LIBRARY}")
 endif()
-find_package(OpenSSL QUIET COMPONENTS SSL Crypto)
-if("$ENV{OPENSSL_DIR}" STREQUAL "" OR NOT DEFINED ENV{OPENSSL_LIB})
-  message(STATUS "using OpenSSL package, with version ${OPENSSL_VERSION}")
+message(STATUS "using OpenSSL version ${OPENSSL_VERSION}")
+message(STATUS "using OpenSSL inc dir ${OPENSSL_INCLUDE_DIR}")
+STRING(REGEX REPLACE ";.*" "" OPENSSL_INCLUDE_DIR "${OPENSSL_INCLUDE_DIR}")
+if(NOT EXISTS "${OPENSSL_INCLUDE_DIR}/openssl")
+  message(FATAL_ERROR "OpenSSL include directory does not exist: ${OPENSSL_INCLUDE_DIR}/openssl")
 endif()
-message(STATUS "using OpenSSL hdrs from ${OPENSSL_INCLUDE_DIR}")
-if(NOT "${OPENSSL_LIB}" STREQUAL "")
+if(NOT DEFINED OPENSSL_LIB_SET AND NOT "$ENV{OPENSSL_LIB}" STREQUAL "")
+  set(OPENSSL_LIB_SET 1)
+  get_filename_component(OPENSSL_LIB "$ENV{OPENSSL_LIB}" ABSOLUTE)
+  if(NOT EXISTS "${OPENSSL_LIB}")
+    message(FATAL_ERROR "directory OPENSSL_LIB does not exist: ${OPENSSL_LIB}")
+  endif()
   set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_LIB}/libcrypto${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  set(OPENSSL_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
 endif()
-message(STATUS "using OpenSSL library ${OPENSSL_CRYPTO_LIBRARY}")
+set(OPENSSL_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY}) # do not reference libssl
+message(STATUS "using OpenSSL lib dir ${OPENSSL_LIB}")
+message(STATUS "using OpenSSL crypto library ${OPENSSL_CRYPTO_LIBRARY}")
+if(NOT EXISTS "${OPENSSL_CRYPTO_LIBRARY}")
+  message(FATAL_ERROR "OpenSSL crypto library file does not exist: ${OPENSSL_CRYPTO_LIBRARY}")
+endif()
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/crypto)
 set(LIBCMP_SRC
