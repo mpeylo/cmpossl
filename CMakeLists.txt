@@ -115,6 +115,8 @@ target_compile_options(${LIBCMP_NAME} PRIVATE
   -Wformat -Wformat-security -Wtype-limits -Wundef -Wconversion
   -Wsign-compare -Wpointer-arith -Wunused-parameter -Wshadow
   -Wno-sign-conversion -Wno-shorten-64-to-32)
+  # -pedantic
+  # -Werror is enabled only for development and CI, using Makefile_v1 without NDEBUG
 
 set_property(TARGET ${LIBCMP_NAME} PROPERTY C_STANDARD 90)
 # target_compile_features(${LIBGENCMP_NAME} PRIVATE c_std_90)  # would have no effect
