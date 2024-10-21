@@ -160,6 +160,9 @@ LIBCMP_SRCS = $(patsubst %,crypto/crmf/%,$(CRMF_SRCS_)) \
     $(patsubst %,crypto/cmp/%,$(CMP_SRCS_)) \
     $(patsubst %,crypto/http/%,$(HTTP_SRCS_))
 
+# Target object files lookup in src directory (which is reused as build directory)
+OBJS = $(LIBCMP_SRCS:.c=$(OBJ))
+
 .phony: build clean clean_all
 
 $(OUT_DIR):
@@ -170,48 +173,30 @@ build: $(OUT_DIR) $(OUT_DIR)/$(OUTLIB)
 build: $(OUT_DIR)/$(STATIC_OUTLIB)
 # endif
 
-$(OUT_DIR)/$(OUTLIBV): $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL) $(LIBCMP_SRCS)
-	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) $(LIBCMP_SRCS) $(LDFLAGS) $(LDLIBS) -shared -o $@ -Wl,-$(SONAME)$(OUTLIBV)
+$(OUT_DIR)/$(OUTLIBV): $(OBJS)
+	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -shared -o $@ -Wl,-$(SONAME)$(OUTLIBV)
 
 $(OUT_DIR)/$(OUTLIB): $(OUT_DIR)/$(OUTLIBV)
 	ln -sf $(OUTLIBV) $(OUT_DIR)/$(OUTLIB)
 
-# Directory for object files, needed for STATIC_OUTLIB
-BUILDDIR=tmp
-# Build directory generation
-$(BUILDDIR):
-	@mkdir -p $(BUILDDIR)
-
-# Path for automatic lookup of source files by Make
-# Note: sort removes duplicate entries
-VPATH := crypto
-VPATH += $(sort $(dir $(wildcard crypto/*/)))
-
-# Target object files lookup in src directory (and mapping to build directory)
-OBJS := $(patsubst %.c,$(BUILDDIR)/%$(OBJ),$(notdir $(LIBCMP_SRCS)))
-
-# Order-only dependency for objects on build dir - prevents unnecessary rebuilds
-# (directories are flagged as changed on every object build)
-$(OBJS): | $(BUILDDIR)
-
 # Individual object targets; also provide dependencies on header files of the project (not on system headers)
-$(BUILDDIR)/%$(OBJ): %.c $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL)
+%$(OBJ): %.c # $(LIBCMP_INC_HDRS) $(LIBCMP_INC_HDRS_INTERNAL)
 	 $(CC) $(CFLAGS) $(LOCAL_CFLAGS) -c $< -o $@
-	@$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -MM $< -MT $@ -MF $(BUILDDIR)/$*.d
+	@$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -MM $< -MT $@ -MF $*.d
 DEPS = $(OBJS:$(OBJ)=.d)
 ifeq ($(findstring clean,$(MAKECMDGOALS)),)
 -include $(DEPS)
 endif
 
 $(OUT_DIR)/$(STATIC_OUTLIB): $(OBJS)
-	ar r $@ $(OBJS) 2>/dev/null
+	ar rcs $@ $(OBJS)
 
 
 # cleaning #####################################################################
 
 clean:
+	rm -f $(OBJS)
 	rm -fr $(OUT_DIR)/{$(OUTLIB_)*$(DLL)*,$(STATIC_OUTLIB)}
-	rm -fr $(BUILDDIR)
 	rm -f *.3{,.gz} libcmp-*.zip
 
 clean_all: clean clean_deb
