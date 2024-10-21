@@ -24,8 +24,9 @@
 #endif
 #if OPENSSL_VERSION_NUMBER < 0x30000000L /* for OpenSSL < 3.0 the follwoing defines are needed */ \
     || 1 /* yet do not use the trace API also for OpenSSL >= 3.0 as it is hard to enable there */
+/* using inline static .. would lead to warning/error with -Wlanguage-extension-token */
+static char * strstr_NULL(const char *s, const char *t) { return s == NULL ? NULL : strstr(s, t); }
 # define OSSL_TRACE_PREFIX(category) "cmpClient " #category ": "
-inline static char * strstr_NULL(const char *s, const char *t) { return s == NULL ? NULL : strstr(s, t); }
 # undef OSSL_TRACE_ENABLED
 # define OSSL_TRACE_ENABLED(category) (strstr_NULL(getenv("OPENSSL_TRACE"), #category) != NULL)
 # undef OSSL_TRACE
@@ -606,7 +607,7 @@ static int may_still_retry(time_t max_time, long *ptimeout)
 int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
 {
     int i, found_expected_ct = 0, found_keep_alive = 0;
-    int found_text_ct = 0;
+    int got_text = 1;
     long n;
     size_t resp_len;
     unsigned long ulong_value;
@@ -696,7 +697,8 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
         }
         if (rctx->state == OHS_WRITE_HDR) {
             (void)BIO_reset(rctx->mem);
-            OSSL_TRACE(HTTP, "Sending request body\n");
+            if (OSSL_TRACE_ENABLED(HTTP))
+                OSSL_TRACE(HTTP, "Sending request body\n");
             /* will not trace request body (for CMP, it is binary) */
             rctx->state = OHS_WRITE_REQ;
         }
@@ -769,7 +771,7 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
 
         /* dump all response header lines */
         if (OSSL_TRACE_ENABLED(HTTP)) {
-            if (rctx->state == OHS_FIRSTLINE || rctx->state == OHS_ERROR)
+            if (rctx->state == OHS_FIRSTLINE)
                 OSSL_TRACE(HTTP, "Received response header:\n");
             OSSL_TRACE1(HTTP, "%s", buf);
         }
@@ -814,6 +816,7 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
                 return 0;
             }
             if (OPENSSL_strcasecmp(key, "Content-Type") == 0) {
+                got_text = OPENSSL_strncasecmp(value, "text/", 5) == 0;
                 if (rctx->status == HTTP_STATUS_CODE_OK
                     && rctx->expected_ct != NULL) {
                     if (OPENSSL_strcasecmp(rctx->expected_ct, value) != 0) {
@@ -825,8 +828,6 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
                     }
                     found_expected_ct = 1;
                 }
-                if (OPENSSL_strncasecmp(value, "text/", 5) == 0)
-                    found_text_ct = 1;
             }
 
             /* https://tools.ietf.org/html/rfc7230#section-6.3 Persistence */
@@ -867,13 +868,16 @@ int OSSL_HTTP_REQ_CTX_nbio(OSSL_HTTP_REQ_CTX *rctx)
             }
             rctx->flags &= ~OSSL_HTTP_FLAG_ENABLE_KEEP_ALIVE;
         }
-        OSSL_TRACE(HTTP, "Received response body\n");
+        if (OSSL_TRACE_ENABLED(HTTP))
+            OSSL_TRACE(HTTP, "Received response body\n");
         /* will not trace response body (for CMP, it is binary) */
 
         if (rctx->state == OHS_ERROR) {
-            if (OSSL_TRACE_ENABLED(HTTP)
-                    && found_text_ct && BIO_get_mem_data(rctx->mem, &p) > 0)
-                OSSL_TRACE1(HTTP, "%s", p);
+            if (OSSL_TRACE_ENABLED(HTTP)) {
+                /* dump error response body */
+                if (got_text && !BIO_eof(rctx->rbio))
+                    goto next_line;
+            }
             return 0;
         }
 
