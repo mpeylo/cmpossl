@@ -19,6 +19,16 @@ an implementation of CMP version 2 and CRMF, as well as a lean HTTP client.
 Software that is based on earlier OpenSSL versions can make use of this library
 in order to use CMP and/or the HTTP client capabilities also with OpenSSL 1.x.
 
+## Support model
+
+The [maintainers](MAINTAINERS) offer two levels of support.
+* Community support is provided on a best-effort basis
+  and can be requested via [issues](../../issues).
+* Paid professional support and consulting can be ordered
+  from Siemens by reaching out to the maintainers.
+
+Contributions are appreciated in the form of [pull requests](../../pulls).
+
 ## Status
 
 In November 2023, the standardization of CMP version 3 was is completed.
