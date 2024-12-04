@@ -15,7 +15,7 @@
 #include <openssl/crypto.h>
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-    #error Should not use OpenSSL versions older than 3. They are unsupported and insecure.
+    #error Should not use OpenSSL versions before 3. They are unsupported and insecure.
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
