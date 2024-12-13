@@ -143,6 +143,7 @@ override CFLAGS += -isystem $(OPENSSL_DIR)/include # use of -isystem is critical
 INCLUDE_OPENSSL_BACKPORT = -include $(LIBCMP_INC)/openssl/openssl_backport.h # used to force inclusion of standalone version
 LOCAL_CFLAGS = -fPIC -DCMP_STANDALONE $(INCLUDE_OPENSSL_BACKPORT)
 
+override LDFLAGS += $(DEBUG_FLAGS) # needed for -fsanitize=...
 override LDFLAGS += -L $(OPENSSL_LIB)# -L $(OPENSSL_LIB_)
 ifeq ($(DEB_TARGET_ARCH),) # not during Debian packaging
 #   override LDFLAGS += -Wl,-rpath,$(OPENSSL_RPATH_LIB)
