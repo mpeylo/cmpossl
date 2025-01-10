@@ -220,6 +220,7 @@ set_property(
 if(NOT TARGET clean_all)
   add_custom_target(clean_all
     COMMAND ${CMAKE_BUILD_TOOL} clean
+    # cowardly not doing rm -r ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}
     COMMAND find . -name "*.o" -o -regex "./libcmp-.*" | xargs rm
     # after the following, cannot call this target again:
     COMMAND find . ( -name "*.cmake" -o -name Makefile ) | xargs rm
