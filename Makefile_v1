@@ -206,7 +206,7 @@ clean_all: clean clean_deb
 	rm -fr Makefile CMakeCache.txt *.cmake CMakeFiles/
 	rm -f install_manifest*.txt
 
-DEST_PRE=$(ROOTFS)/usr
+DEST_PRE=$(ROOTFS)/usr/local
 DEST_LIB=$(DEST_PRE)/lib
 DEST_INC=$(DEST_PRE)/include/cmp
 DEST_MAN=$(DEST_PRE)/share/man/man3
