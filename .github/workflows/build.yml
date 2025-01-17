@@ -45,5 +45,6 @@ jobs:
         run: |
           # needs access to azure.archive.ubuntu.com:
           sudo apt-get update
-          sudo apt-get install -y >/dev/null debhelper devscripts
+          sudo apt-get install -y >/dev/null debhelper devscripts build-essential:native
           make -f Makefile_v1 deb
+          # dpkg-buildpackage -uc -us
