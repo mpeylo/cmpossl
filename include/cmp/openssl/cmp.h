@@ -200,6 +200,7 @@ typedef ASN1_BIT_STRING OSSL_CMP_PKIFAILUREINFO;
  *       -- CertReqMsg
  *   }
  */
+#  define OSSL_CMP_PKISTATUS_rejection_by_client    -4
 #  define OSSL_CMP_PKISTATUS_request                -3
 #  define OSSL_CMP_PKISTATUS_trans                  -2
 #  define OSSL_CMP_PKISTATUS_unspecified            -1
