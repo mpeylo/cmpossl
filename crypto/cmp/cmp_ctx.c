@@ -129,11 +129,21 @@ OSSL_CMP_CTX *OSSL_CMP_CTX_new(OSSL_LIB_CTX *libctx, const char *propq)
     if ((ctx->untrusted = sk_X509_new_null()) == NULL)
         goto oom;
 
-    ctx->pbm_slen = 16;
+    /* https://www.rfc-editor.org/rfc/rfc9045.html#name-password-based-message-auth */
+    ctx->pbm_slen = 16; /* The salt SHOULD be at least 8 octets (64 bits) long. */
     if (!cmp_ctx_set_md(ctx, &ctx->pbm_owf, NID_sha256))
         goto err;
-    ctx->pbm_itercnt = 500;
+    ctx->pbm_itercnt = 1024; /* 10000 would be recommended; Insta Demo CA always uses 1024 */
+    /*
+     * On count > 2047, Insta Demo CA reports error with PKIFailureInfo: badMessageCheck;
+     * StatusString: "CMP header protection check failed. (...): password based MAC does not match"
+     */
     ctx->pbm_mac = NID_hmac_sha1;
+    /*
+     * By default using HMAC-SHA1 as per https://www.rfc-editor.org/rfc/rfc4211.html#section-4.4
+     * on other values like NID_hmacWithSHA256, Insta Demo CA reports error with badDataFormat;
+     * StatusString: "ASN.1 decoding error"
+     */
 
     if (!cmp_ctx_set_md(ctx, &ctx->digest, NID_sha256))
         goto err;
