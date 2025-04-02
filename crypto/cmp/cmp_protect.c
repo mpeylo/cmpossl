@@ -231,8 +231,25 @@ static X509_ALGOR *sig_algor(const OSSL_CMP_CTX *ctx)
 static int set_senderKID(const OSSL_CMP_CTX *ctx, OSSL_CMP_MSG *msg,
                          const ASN1_OCTET_STRING *id)
 {
-    if (id == NULL)
-        id = ctx->referenceValue; /* standard for PBM, fallback for sig-based */
+    if (id == NULL && ctx->secretValue != NULL) {
+        /* take fallback senderKID from the commonName in the sender field if available */
+        const GENERAL_NAME *gn = msg->header->sender;
+        const X509_NAME *sender;
+        int res;
+
+        if (gn->type == GEN_DIRNAME && (sender = gn->d.directoryName) != NULL
+            && (res = X509_NAME_get_index_by_NID(sender, NID_commonName, -1)) >= 0) {
+            ASN1_STRING *astr = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(sender, res));
+            ASN1_OCTET_STRING *ostr = NULL;
+
+            if (!ossl_cmp_asn1_octet_string_set1_bytes(&ostr, ASN1_STRING_get0_data(astr),
+                                                       ASN1_STRING_length(astr)))
+                return 0;
+            res = ossl_cmp_hdr_set1_senderKID(msg->header, ostr);
+            ASN1_OCTET_STRING_free(ostr);
+            return res;
+        }
+    }
     return id == NULL || ossl_cmp_hdr_set1_senderKID(msg->header, id);
 }
 
@@ -252,13 +269,13 @@ int ossl_cmp_msg_protect(OSSL_CMP_CTX *ctx, OSSL_CMP_MSG *msg)
     msg->protection = NULL;
 
     if (ctx->unprotectedSend) {
-        if (!set_senderKID(ctx, msg, NULL))
+        if (!set_senderKID(ctx, msg, ctx->referenceValue))
             goto err;
     } else if (ctx->secretValue != NULL) {
         /* use PasswordBasedMac according to 5.1.3.1 if secretValue is given */
         if ((msg->header->protectionAlg = pbmac_algor(ctx)) == NULL)
             goto err;
-        if (!set_senderKID(ctx, msg, NULL))
+        if (!set_senderKID(ctx, msg, ctx->referenceValue))
             goto err;
 
         /*

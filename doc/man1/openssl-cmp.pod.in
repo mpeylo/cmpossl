@@ -773,9 +773,11 @@ Default is C<pem>.
 
 =item B<-ref> I<value>
 
-Reference number/string/value to use as fallback senderKID; this is required
-if no sender name can be determined from the B<-cert> or <-subject> options and
-is typically used when authenticating with pre-shared key (password-based MAC).
+Reference string/name value to place in senderKID when using MAC-based protection.
+When not provided, the commonName of the sender field is taken as the fallback value.
+Conversely, when provided, the value is also taken as the commonName
+of the sender field when using of MAC-based protection,
+while for signature-base protection it is just taken as the ultimate fallback value.
 
 =item B<-secret> I<arg>
 
