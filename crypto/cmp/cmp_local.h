@@ -65,6 +65,7 @@ struct ossl_cmp_ctx_st {
      * certificate responses (ip/cp/kup), revocation responses (rp), and PKIConf
      */
     int unprotectedErrors;
+    int nonmatchedErrorNonces; /* accept missing/wrong transactionID or recipNonce values in error */
     int noCacheExtraCerts;
     X509 *srvCert; /* certificate used to identify the server */
     X509 *validatedSrvCert; /* caches any already validated server cert */

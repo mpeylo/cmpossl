@@ -92,6 +92,7 @@ Server authentication options:
 [B<-expect_sender> I<name>]
 [B<-ignore_keyusage>]
 [B<-unprotected_errors>]
+[B<-nonmatched_error_nonces>]
 [B<-no_cache_extracerts>]
 [B<-srvcertout> I<filename>]
 [B<-extracertsout> I<filename>]
@@ -680,6 +681,12 @@ This option applies to both CMP clients and the mock server.
 
 Accept missing or invalid protection of negative responses from the server.
 This applies to the following message types and contents:
+
+=item B<-nonmatched_error_nonces>
+
+Accept missing or non-matching transactionID or recipNonce values in error messages.
+This can be helpful in case the server cannot provide a proper error message,
+for instance if was unable to parse the ASN.1 encoding of a request message.
 
 =item B<-no_cache_extracerts>
 
