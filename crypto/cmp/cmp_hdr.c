@@ -303,7 +303,7 @@ int ossl_cmp_hdr_init(OSSL_CMP_CTX *ctx, OSSL_CMP_PKIHEADER *hdr)
     if (!ossl_cmp_hdr_set_pvno(hdr, OSSL_CMP_PVNO))
         return 0;
 
-    if (ctx->secretValue != NULL) {
+    if (ref != NULL) {
         ref_name = X509_NAME_new();
         if (ref_name == NULL
             || X509_NAME_add_entry_by_NID(ref_name, NID_commonName, MBSTRING_UTF8,
@@ -311,7 +311,7 @@ int ossl_cmp_hdr_init(OSSL_CMP_CTX *ctx, OSSL_CMP_PKIHEADER *hdr)
                                           ASN1_STRING_length(ref), -1, 0) != 1)
             goto err;
     }
-    if (ctx->secretValue != NULL && ref_name != NULL) {
+    if (ctx->secretValue != NULL && ref != NULL) {
         if (!ossl_cmp_hdr_set1_sender(hdr, ref_name))
             goto err;
     } else {
