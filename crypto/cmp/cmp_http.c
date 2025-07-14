@@ -81,13 +81,13 @@ OSSL_CMP_MSG *OSSL_CMP_MSG_http_perform(OSSL_CMP_CTX *ctx,
         if (*path == '/')
             path++;
         if (bio == NULL)
-            ossl_cmp_log4(DEBUG, ctx, "connecting to CMP server %s:%s%s; will use HTTP path \"/%s\"",
-                          ctx->server, server_port,
-                          tls_used ? " using TLS" : "", path);
+            ossl_cmp_log4(DEBUG, ctx,
+                          "connecting to CMP server via http%s://%s:%s/%s",
+                          tls_used ? "s" : "", ctx->server, server_port, path);
         else
-            ossl_cmp_log1(DEBUG, ctx,
-                          "contacting CMP server via existing connection; will use HTTP path \"/%s\"",
-                          path);
+            ossl_cmp_log3(DEBUG, ctx,
+                          "using existing connection with CMP server %s:%s and HTTP path /%s",
+                          ctx->server, server_port, path);
     }
 
     flags |= keep_alive(ctx->keep_alive, req->body->type, bio);
