@@ -45,6 +45,7 @@ _Pragma("GCC diagnostic ignored \"-Wunused-parameter\"")
 #  define SN_id_mod_cmp2021_02            "id-mod-cmp2021-02"
 #  define NID_id_mod_cmp2021_02           1253
 #  define OBJ_id_mod_cmp2021_02           OBJ_id_pkix_mod,100L
+#  define SN_id_it_rootCaCert             "id-it-rootCaCert"
 #  define NID_id_it_rootCaCert            1254
 #  define OBJ_id_it_rootCaCert            OBJ_id_it,20L
 #  define SN_id_it_certProfile            "id-it-certProfile"
