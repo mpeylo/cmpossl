@@ -498,6 +498,8 @@ typedef struct ossl_http_req_ctx_st OSSL_HTTP_REQ_CTX;
 #  define SN_id_it_certReqTemplate   "id-it-certReqTemplate"
 #  define NID_id_it_certReqTemplate  1225
 #  define OBJ_id_it_certReqTemplate  OBJ_id_it,19L
+/* for X509_NAME_get_index_by_NID: */
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 # endif /* OPENSSL_VERSION_NUMBER < 0x30000000L */
 
 /* OpenSSL-internal functions: */
