@@ -204,13 +204,7 @@ int X509_STORE_add_cert_dups(X509_STORE *ctx, X509 *x);
 #  define OPENSSL_LINE __LINE__
 #  define BIO_up_ref(b)((b)->references++)
 # endif
-# if OPENSSL_VERSION_NUMBER >= 0x30000000L
-#  define OpenSSL_version_num() ((unsigned long) \
-                                 ((OPENSSL_version_major() << 28) \
-                                  | (OPENSSL_version_minor() << 20) \
-                                  | (OPENSSL_version_patch() << 4L) \
-                                  | _OPENSSL_VERSION_PRE_RELEASE))
-# else
+# if OPENSSL_VERSION_NUMBER < 0x30000000L
 #  define ERR_raise(lib, r) \
     ERR_PUT_error((lib), 0, (r), OPENSSL_FILE, OPENSSL_LINE)
 #  define ERR_raise_data \
