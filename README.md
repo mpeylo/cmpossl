@@ -1,8 +1,11 @@
 # CMPforOpenSSL (cmpossl)
 
 This is an intermediate CMP, CRMF, and HTTP version abstraction library
-based on OpenSSL. It is needed only if required special CMP features
+based on the [OpenSSL libarary](https://www.openssl-library.org/).
+It is needed only if required special CMP features
 or fixes are not yet (fully) available in the OpenSSL version being used.
+
+<span style="color:darkred">**As of October 2025, this software is no more actively maintained.**</span>
 
 Note that this library offers just a low-level API and does not provide a CLI.
 A CMP CLI is provided both by [OpenSSL](https://github.com/openssl/openssl)
@@ -13,18 +16,16 @@ which was formerly needed in order to provide more recent developments).
 
 ## Purpose
 
-The purpose of this software is to provide a uniform interim CMP and HTTP client
+The purpose of this software was to provide a uniform interim CMP and HTTP client
 API and implementation library that links with all current OpenSSL versions.
 
 Since version 3.0, [OpenSSL](https://openssl-library.org/) includes
 an implementation of CMP version 2 and CRMF, as well as a lean HTTP client.
-As of November 2024,
-upstream contribution of the features of CMP version 3 according to the
+With the relase of OpenSSL 3.5 in April 2025,
+the CMP features added by [RFC 9480 (CMP Updates)](https://www.rfc-editor.org/rfc/rfc9480) and specified in more detail in the
 [Lightweight CMP Profile (LCMPP)](https://www.rfc-editor.org/rfc/rfc9483)
-to OpenSSL is nearly finished. OpenSSL version 3.4 contains all of them except
-for [central key generation](https://github.com/openssl/openssl/pull/25132).
-In version 3.5, to be released in April 2025, this integration will be complete.
-Therefore, in most cases this intermediate library meanwhile is not needed anymore.
+are available via the upstream OpenSSL library.
+Therefore, in most cases, this intermediate library is no longer needed.
 <!--
 Software that is based on earlier OpenSSL versions can make use of this library
 in order to use CMP and/or the HTTP client capabilities also with OpenSSL 1.x.
@@ -46,7 +47,8 @@ Contributions can be provided in the form of [pull requests](../../pulls).
 
 ## Further information
 
-Unmaintained further information may be found in the [former README file](README_old.md).
+Unmaintained further detailed and partly outdated
+information may be found in the [former README file](README_old.md).
 
 
 ## Disclaimer
