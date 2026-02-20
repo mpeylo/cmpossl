@@ -299,8 +299,7 @@ int X509_add_cert(STACK_OF(X509) *sk, X509 *cert, int flags)
         (void)X509_up_ref(cert);
     return 1;
 }
-
-int X509_add_certs(STACK_OF(X509) *sk, STACK_OF(X509) *certs, int flags)
+int X509_add_certs(STACK_OF(X509) *sk, OPENSSL_4_0_CONST STACK_OF(X509) *certs, int flags)
 /* compiler would allow 'const' for the certs, yet they may get up-ref'ed */
 {
     if (sk == NULL) {
@@ -310,7 +309,7 @@ int X509_add_certs(STACK_OF(X509) *sk, STACK_OF(X509) *certs, int flags)
     return ossl_x509_add_certs_new(&sk, certs, flags);
 }
 
-int ossl_x509_add_certs_new(STACK_OF(X509) **p_sk, STACK_OF(X509) *certs,
+int ossl_x509_add_certs_new(STACK_OF(X509) **p_sk, const STACK_OF(X509) *certs,
                             int flags)
 /* compiler would allow 'const' for the certs, yet they may get up-ref'ed */
 {
@@ -560,7 +559,11 @@ STACK_OF(X509) *X509_STORE_get1_all_certs(X509_STORE *store)
     if ((sk = sk_X509_new_null()) == NULL)
         return NULL;
     X509_STORE_lock(store);
+#if OPENSSL_VERSION_NUMBER >= 0x30300000L
+    objs = X509_STORE_get1_objects(store);
+#else
     objs = X509_STORE_get0_objects(store);
+#endif
     for (i = 0; i < sk_X509_OBJECT_num(objs); i++) {
         X509 *cert = X509_OBJECT_get0_X509(sk_X509_OBJECT_value(objs, i));
 
@@ -574,6 +577,9 @@ STACK_OF(X509) *X509_STORE_get1_all_certs(X509_STORE *store)
  err:
     X509_STORE_unlock(store);
     sk_X509_pop_free(sk, X509_free);
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
+#endif
     return NULL;
 }
 

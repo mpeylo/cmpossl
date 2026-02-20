@@ -198,6 +198,11 @@ int X509_STORE_add_cert_dups(X509_STORE *ctx, X509 *x);
 # else
 #  define OPENSSL_CMP_CONST
 # endif
+# if OPENSSL_VERSION_NUMBER >= 0x40000000L
+#  define OPENSSL_4_0_CONST const
+# else
+#  define OPENSSL_4_0_CONST
+# endif
 # if OPENSSL_VERSION_NUMBER < 0x10100004L
 #  define OPENSSL_die(msg, file, line) OpenSSLDie(file, line, msg)
 #  define OPENSSL_FILE __FILE__
@@ -475,7 +480,7 @@ int X509_cmp_timeframe(const X509_VERIFY_PARAM *vpm,
 STACK_OF(X509) *X509_STORE_get1_all_certs(X509_STORE *store);
 int X509_self_signed(X509 *cert, int verify_signature);
 int X509_add_cert(STACK_OF(X509) *sk, X509 *cert, int flags);
-int X509_add_certs(STACK_OF(X509) *sk, STACK_OF(X509) *certs, int flags);
+int X509_add_certs(STACK_OF(X509) *sk, OPENSSL_4_0_CONST STACK_OF(X509) *certs, int flags);
 typedef struct ossl_http_req_ctx_st OSSL_HTTP_REQ_CTX;
 #  define ASN1_OP_DUP_POST        15
 #  define ASN1_OP_GET0_LIBCTX     16
@@ -511,7 +516,7 @@ int ossl_cmp_sk_X509_add1_cert(STACK_OF(X509) *sk, X509 *cert,
                                int no_dup, int prepend);
 int ossl_cmp_sk_X509_add1_certs(STACK_OF(X509) *sk, STACK_OF(X509) *certs,
                                 int no_self_signed, int no_dups, int prepend);
-int ossl_x509_add_certs_new(STACK_OF(X509) **p_sk, STACK_OF(X509) *certs,
+int ossl_x509_add_certs_new(STACK_OF(X509) **p_sk, const STACK_OF(X509) *certs,
                             int flags);
 int ossl_x509_add_cert_new(STACK_OF(X509) **p_sk, X509 *cert, int flags);
 /* from crypto/bio.h: */
