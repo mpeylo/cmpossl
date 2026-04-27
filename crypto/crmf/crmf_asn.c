@@ -16,16 +16,19 @@
 #include "crmf_local.h"
 
 #ifndef OPENSSL_NO_CMS
-/* TODO remove when CMS API has been extended by CMS_EnvelopedData and CMS_SignedData fns */  
+#if OPENSSL_VERSION_NUMBER < 0x40000000L
+/* since ASN1_OCTET_STRING was unexported in 4.0, cannot externally define CMS_SignedData_it */
 # if OPENSSL_VERSION_NUMBER < 0x10101000L
 #  include "cms_asn1.v10.c"
 # elif OPENSSL_VERSION_NUMBER < 0x30000000L
 #  include "cms_asn1.v11.c"
-# elif OPENSSL_VERSION_NUMBER < 0x30200000L
+# elif OPENSSL_VERSION_NUMBER < 0x30100000L
 #  include "cms_asn1.v30.c"
 # else
 #  include "cms_asn1.v31.c"
 # endif
+/* In OpenSSL 3.2, CMS API has been extended by CMS_EnvelopedData and CMS_SignedData fns */
+#endif /* OPENSSL_VERSION_NUMBER < 0x0x40000000L */
 #else /* ndef OPENSSL_NO_CMS */
 struct CMS_EnvelopedData_st {
     int32_t version;

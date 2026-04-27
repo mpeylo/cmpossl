@@ -139,7 +139,7 @@ static int add_extensions(STACK_OF(X509_EXTENSION) **target,
 
     for (i = 0; i < sk_X509_EXTENSION_num(exts); i++) {
         X509_EXTENSION *ext = sk_X509_EXTENSION_value(exts, i);
-        ASN1_OBJECT *obj = X509_EXTENSION_get_object(ext);
+        const ASN1_OBJECT *obj = X509_EXTENSION_get_object(ext);
         int idx = X509v3_get_ext_by_OBJ(*target, obj, -1);
 
         /* Does extension exist in target? */

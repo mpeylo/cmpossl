@@ -616,13 +616,13 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
 
 #ifndef OPENSSL_NO_CMS
 # if OPENSSL_VERSION_NUMBER < 0x30200000L
-/* added to OpenSSL 3.1 in #18301 */
+/* added to OpenSSL 3.2 in #18301 */
 BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
                                EVP_PKEY *pkey, X509 *cert,
                                ASN1_OCTET_STRING *secret, unsigned int flags,
                                OSSL_LIB_CTX *libctx, const char *propq);
 IMPLEMENT_ASN1_ALLOC_FUNCTIONS(CMS_SignedData)
-/* added to OpenSSL 3.1 in #18667 */
+/* added to OpenSSL 3.2 in #18667 */
 BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
                            STACK_OF(X509) *scerts, X509_STORE *store,
                            STACK_OF(X509) *extra, STACK_OF(X509_CRL) *crls,
@@ -631,7 +631,7 @@ BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
 # endif
 #endif /* OPENSSL_NO_CMS */
 
-#ifndef OPENSSL_NO_CMS
+#if !defined OPENSSL_NO_CMS && OPENSSL_VERSION_NUMBER < 0x40000000L
 DECLARE_ASN1_ITEM(CMS_SignedData) /* copied from cms_local.h */
 
 /* check for KGA authorization implied by CA flag or by explicit EKU cmKGA */
@@ -664,7 +664,7 @@ static int check_cmKGA(ossl_unused const X509_PURPOSE *purpose,
     sk_ASN1_OBJECT_pop_free(ekus, ASN1_OBJECT_free);
     return ret;
 }
-#endif /* OPENSSL_NO_CMS */
+#endif /* !defined OPENSSL_NO_CMS && OPENSSL_VERSION_NUMBER < 0x40000000L */
 
 EVP_PKEY
 *OSSL_CRMF_ENCRYPTEDKEY_get1_pkey(OSSL_CRMF_ENCRYPTEDKEY *encryptedKey,
@@ -673,7 +673,7 @@ EVP_PKEY
                                   ASN1_OCTET_STRING *secret,
                                   OSSL_LIB_CTX *libctx, const char *propq)
 {
-#ifndef OPENSSL_NO_CMS
+#if !defined OPENSSL_NO_CMS && OPENSSL_VERSION_NUMBER < 0x40000000L
     BIO *bio = NULL;
     CMS_SignedData *sd = NULL;
     BIO *pkey_bio = NULL;
@@ -699,7 +699,8 @@ EVP_PKEY
         return ret;
     }
 
-#ifndef OPENSSL_NO_CMS
+#if !defined OPENSSL_NO_CMS && OPENSSL_VERSION_NUMBER < 0x40000000L
+    /* since ASN1_OCTET_STRING was unexported in 4.0, cannot externally define CMS_SignedData_it */
     if (ts == NULL) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_NULL_ARGUMENT);
         return NULL;
@@ -758,7 +759,7 @@ EVP_PKEY
     ((void)ts, (void)extra, (void)cert, (void)secret);
     ERR_raise(ERR_LIB_CRMF, CRMF_R_CMS_NOT_SUPPORTED);
     return NULL;
-#endif /* OPENSSL_NO_CMS */
+#endif /* !defined OPENSSL_NO_CMS && OPENSSL_VERSION_NUMBER < 0x40000000L */
 }
 
 unsigned char
@@ -808,11 +809,11 @@ unsigned char
         int retval;
 
         if (EVP_PKEY_decrypt(pkctx, NULL, &eksize,
-                             encKey->data, encKey->length) <= 0
+                             ASN1_STRING_get0_data(encKey), ASN1_STRING_length(encKey)) <= 0
                 || (ek = OPENSSL_malloc(eksize)) == NULL)
             goto end;
         retval = EVP_PKEY_decrypt(pkctx, ek, &eksize,
-                                  encKey->data, encKey->length);
+                                  ASN1_STRING_get0_data(encKey), ASN1_STRING_length(encKey));
         ERR_clear_error(); /* error state may have sensitive information */
         failure = ~constant_time_is_zero_s(constant_time_msb(retval)
                                            | constant_time_is_zero(retval));
@@ -833,7 +834,7 @@ unsigned char
         goto end;
     }
 
-    if ((out = OPENSSL_malloc(enc->encValue->length +
+    if ((out = OPENSSL_malloc(ASN1_STRING_length(enc->encValue) +
                               EVP_CIPHER_get_block_size(cipher))) == NULL
             || (evp_ctx = EVP_CIPHER_CTX_new()) == NULL)
         goto end;
@@ -841,8 +842,8 @@ unsigned char
 
     if (!EVP_DecryptInit(evp_ctx, cipher, ek, iv)
             || !EVP_DecryptUpdate(evp_ctx, out, outlen,
-                                  enc->encValue->data,
-                                  enc->encValue->length)
+                                  ASN1_STRING_get0_data(enc->encValue),
+                                  ASN1_STRING_length(enc->encValue))
             || !EVP_DecryptFinal(evp_ctx, out + *outlen, &n)) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_ERROR_DECRYPTING_ENCRYPTEDVALUE);
         goto end;
@@ -966,7 +967,7 @@ struct CMS_ContentInfo_st {
 };
 
 
-/* added to OpenSSL 3.1 in #18301 */
+/* added to OpenSSL 3.2 in #18301 */
 BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
                                EVP_PKEY *pkey, X509 *cert,
                                ASN1_OCTET_STRING *secret, unsigned int flags,
@@ -1005,7 +1006,7 @@ BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
     return bio;
 }
 
-/* added to OpenSSL 3.1 in #18667 */
+/* added to OpenSSL 3.2 in #18667 */
 BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
                            STACK_OF(X509) *scerts, X509_STORE *store,
                            STACK_OF(X509) *extra, STACK_OF(X509_CRL) *crls,

@@ -71,9 +71,13 @@ _Pragma("GCC diagnostic ignored \"-Wunused-parameter\"")
 #  define OPENSSL_strncasecmp strncasecmp
 # endif
 X509_ALGOR *ossl_X509_ALGOR_from_nid(int nid, int ptype, void *pval);
-# define ossl_asn1_string_set_bits_left(str, num) \
+# if OPENSSL_VERSION_NUMBER < 0x40000000L
+#  define ossl_asn1_string_set_bits_left(str, num) \
    ((str)->flags &= ~0x07, \
     (str)->flags |= ASN1_STRING_FLAG_BITS_LEFT | ((num) & 0x07))
+# else
+#  define ossl_asn1_string_set_bits_left(str, num) /* sorry, no-op */
+# endif
 void X509_PUBKEY_set0_public_key(X509_PUBKEY *pub,
                                  unsigned char *penc, int penclen);
 
@@ -478,8 +482,10 @@ char *ossl_sk_ASN1_UTF8STRING2text(STACK_OF(ASN1_UTF8STRING) *text,
 int X509_cmp_timeframe(const X509_VERIFY_PARAM *vpm,
                        const ASN1_TIME *start, const ASN1_TIME *end);
 STACK_OF(X509) *X509_STORE_get1_all_certs(X509_STORE *store);
+#if OPENSSL_VERSION_NUMBER < 0x40000000L
 int X509_self_signed(X509 *cert, int verify_signature);
 int X509_add_cert(STACK_OF(X509) *sk, X509 *cert, int flags);
+#endif
 int X509_add_certs(STACK_OF(X509) *sk, OPENSSL_4_0_CONST STACK_OF(X509) *certs, int flags);
 typedef struct ossl_http_req_ctx_st OSSL_HTTP_REQ_CTX;
 #  define ASN1_OP_DUP_POST        15

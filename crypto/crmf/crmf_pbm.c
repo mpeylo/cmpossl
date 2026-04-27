@@ -197,7 +197,7 @@ int OSSL_CRMF_pbm_new(OSSL_LIB_CTX *libctx, const char *propq,
     if (!EVP_DigestUpdate(ctx, sec, seclen))
         goto err;
     /* then the salt */
-    if (!EVP_DigestUpdate(ctx, pbmp->salt->data, pbmp->salt->length))
+    if (!EVP_DigestUpdate(ctx, ASN1_STRING_get0_data(pbmp->salt), ASN1_STRING_length(pbmp->salt)))
         goto err;
     if (!EVP_DigestFinal_ex(ctx, basekey, &bklen))
         goto err;

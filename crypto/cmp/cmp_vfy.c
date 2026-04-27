@@ -83,12 +83,11 @@ static int verify_PBMAC(OSSL_CMP_CTX *ctx, const OSSL_CMP_MSG *msg)
     /* generate expected protection for the message */
     if ((protection = ossl_cmp_calc_protection(ctx, msg)) == NULL)
         return 0; /* failed to generate protection string! */
-
-    valid = msg->protection != NULL && msg->protection->length >= 0
-            && msg->protection->type == protection->type
-            && msg->protection->length == protection->length
-            && CRYPTO_memcmp(msg->protection->data, protection->data,
-                             protection->length) == 0;
+    valid = msg->protection != NULL && ASN1_STRING_length(msg->protection) >= 0
+            && ASN1_STRING_type(msg->protection) == ASN1_STRING_type(protection)
+            && ASN1_STRING_length(msg->protection) == ASN1_STRING_length(protection)
+            && CRYPTO_memcmp(ASN1_STRING_get0_data(msg->protection), ASN1_STRING_get0_data(protection),
+                             ASN1_STRING_length(protection)) == 0;
     ASN1_BIT_STRING_free(protection);
     if (!valid)
         ERR_raise(ERR_LIB_CMP, CMP_R_WRONG_PBM_VALUE);
@@ -251,7 +250,11 @@ static int cert_acceptable(const OSSL_CMP_CTX *ctx,
     int self_issued = X509_check_issued(cert, cert) == X509_V_OK;
     char *str;
     X509_VERIFY_PARAM *vpm = ts != NULL ? X509_STORE_get0_param(ts) : NULL;
+#if OPENSSL_VERSION_NUMBER < 0x40000000L
     int time_cmp;
+#else
+    int err;
+#endif
 
     ossl_cmp_log3(INFO, ctx, " considering %s%s %s with..",
                   self_issued ? "self-issued ": "", desc1, desc2);
@@ -271,6 +274,7 @@ static int cert_acceptable(const OSSL_CMP_CTX *ctx,
         return 0;
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x40000000L
     time_cmp = X509_cmp_timeframe(vpm, X509_get0_notBefore(cert),
                                   X509_get0_notAfter(cert));
     if (time_cmp != 0) {
@@ -283,6 +287,34 @@ static int cert_acceptable(const OSSL_CMP_CTX *ctx,
                 && verify_cb_cert(ts, cert, err) <= 0)
             return 0;
     }
+#else
+    if (!X509_check_certificate_times(vpm, cert, &err)) {
+        const char *message;
+
+        switch (err) {
+        case X509_V_ERR_CERT_NOT_YET_VALID:
+            message = "cert is not yet valid";
+            break;
+        case X509_V_ERR_CERT_HAS_EXPIRED:
+            message = "cert has expired";
+            break;
+        case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
+            message = "cert has an invalid not before field";
+            break;
+        case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
+            message = "cert has an invalid not after field";
+            break;
+        default:
+            message = "cert is invalid for an unspecfied reason";
+            break;
+        }
+
+        ossl_cmp_warn(ctx, message);
+        if (ctx->log_cb != NULL /* logging not temporarily disabled */
+            && verify_cb_cert(ts, cert, err) <= 0)
+            return 0;
+    }
+#endif
 
     if (!check_name(ctx, 1,
                     "cert subject", X509_get_subject_name(cert),
@@ -566,7 +598,7 @@ int OSSL_CMP_validate_msg(OSSL_CMP_CTX *ctx, const OSSL_CMP_MSG *msg)
     }
 
     if (msg->header->protectionAlg == NULL /* unprotected message */
-            || msg->protection == NULL || msg->protection->data == NULL) {
+            || msg->protection == NULL || ASN1_STRING_get0_data(msg->protection) == NULL) {
         ERR_raise(ERR_LIB_CMP, CMP_R_MISSING_PROTECTION);
         return 0;
     }

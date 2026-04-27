@@ -226,7 +226,7 @@ void OSSL_CMP_CTX_free(OSSL_CMP_CTX *ctx)
     EVP_PKEY_free(ctx->pkey);
     ASN1_OCTET_STRING_free(ctx->referenceValue);
     if (ctx->secretValue != NULL)
-        OPENSSL_cleanse(ctx->secretValue->data, ctx->secretValue->length);
+        OPENSSL_cleanse((void *)ASN1_STRING_get0_data(ctx->secretValue), ASN1_STRING_length(ctx->secretValue));
     ASN1_OCTET_STRING_free(ctx->secretValue);
     EVP_MD_free(ctx->pbm_owf);
 
@@ -452,7 +452,7 @@ int OSSL_CMP_CTX_set1_secretValue(OSSL_CMP_CTX *ctx, const unsigned char *sec,
     if (ossl_cmp_asn1_octet_string_set1_bytes(&secretValue, sec, len) != 1)
         return 0;
     if (ctx->secretValue != NULL) {
-        OPENSSL_cleanse(ctx->secretValue->data, ctx->secretValue->length);
+        OPENSSL_cleanse((void *)ASN1_STRING_get0_data(ctx->secretValue), ASN1_STRING_length(ctx->secretValue));
         ASN1_OCTET_STRING_free(ctx->secretValue);
     }
     ctx->secretValue = secretValue;

@@ -76,8 +76,8 @@ ASN1_BIT_STRING *ossl_cmp_calc_protection(const OSSL_CMP_CTX *ctx,
         prot_part_der_len = (size_t)len;
 
         pbm_str = (ASN1_STRING *)ppval;
-        pbm_str_uc = pbm_str->data;
-        pbm = d2i_OSSL_CRMF_PBMPARAMETER(NULL, &pbm_str_uc, pbm_str->length);
+        pbm_str_uc = ASN1_STRING_get0_data(pbm_str);
+        pbm = d2i_OSSL_CRMF_PBMPARAMETER(NULL, &pbm_str_uc, ASN1_STRING_length(pbm_str));
         if (pbm == NULL) {
             ERR_raise(ERR_LIB_CMP, CMP_R_WRONG_ALGORITHM_OID);
             goto end;
@@ -85,7 +85,7 @@ ASN1_BIT_STRING *ossl_cmp_calc_protection(const OSSL_CMP_CTX *ctx,
 
         if (!OSSL_CRMF_pbm_new(ctx->libctx, ctx->propq,
                                pbm, prot_part_der, prot_part_der_len,
-                               ctx->secretValue->data, ctx->secretValue->length,
+                               ASN1_STRING_get0_data(ctx->secretValue), ASN1_STRING_length(ctx->secretValue),
                                &protection, &sig_len))
             goto end;
 
@@ -242,7 +242,7 @@ static int set1_pwd_senderKID(OSSL_CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *
         if (gn != NULL && gn->type == GEN_DIRNAME
             && (sender = gn->d.directoryName) != NULL
             && (res = X509_NAME_get_index_by_NID(sender, NID_commonName, -1)) >= 0) {
-            ASN1_STRING *astr = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(sender, res));
+            const ASN1_STRING *astr = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(sender, res));
             ASN1_OCTET_STRING *ostr = NULL;
 
             if (!ossl_cmp_asn1_octet_string_set1_bytes(&ostr, ASN1_STRING_get0_data(astr),

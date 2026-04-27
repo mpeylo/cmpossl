@@ -151,12 +151,14 @@ int ossl_x509_print_ex_brief(BIO *bio, X509 *cert, unsigned long neg_cflags)
     if (!X509_print_ex(bio, cert, flags,
                        ~(X509_FLAG_NO_SERIAL | X509_FLAG_NO_VALIDITY)))
         return 0;
+#if OPENSSL_VERSION_NUMBER < 0x40000000L
     if (X509_cmp_current_time(X509_get0_notBefore(cert)) > 0)
         if (BIO_printf(bio, "        not yet valid\n") <= 0)
             return 0;
     if (X509_cmp_current_time(X509_get0_notAfter(cert)) < 0)
         if (BIO_printf(bio, "        no more valid\n") <= 0)
             return 0;
+#endif
     return X509_print_ex(bio, cert, flags,
                          ~neg_cflags & ~X509_FLAG_EXTENSIONS_ONLY_KID);
 }
@@ -252,6 +254,7 @@ int ossl_x509v3_cache_extensions(X509 *x)
 }
 
 
+#if OPENSSL_VERSION_NUMBER < 0x40000000L
 int X509_self_signed(X509 *cert, ossl_unused int verify_signature)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -260,6 +263,7 @@ int X509_self_signed(X509 *cert, ossl_unused int verify_signature)
     return (X509_get_extension_flags(cert) & EXFLAG_SS) != 0;
 #endif
 }
+#endif
 
 int ossl_x509_add_cert_new(STACK_OF(X509) **p_sk, X509 *cert, int flags)
 {
@@ -270,6 +274,7 @@ int ossl_x509_add_cert_new(STACK_OF(X509) **p_sk, X509 *cert, int flags)
     return X509_add_cert(*p_sk, cert, flags);
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x40000000L
 int X509_add_cert(STACK_OF(X509) *sk, X509 *cert, int flags)
 {
     if (sk == NULL) {
@@ -299,6 +304,7 @@ int X509_add_cert(STACK_OF(X509) *sk, X509 *cert, int flags)
         (void)X509_up_ref(cert);
     return 1;
 }
+#endif
 int X509_add_certs(STACK_OF(X509) *sk, OPENSSL_4_0_CONST STACK_OF(X509) *certs, int flags)
 /* compiler would allow 'const' for the certs, yet they may get up-ref'ed */
 {
