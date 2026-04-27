@@ -248,6 +248,9 @@ static int use_proxy(const char *no_proxy, const char *server)
         return 0;
     sl = strlen(server);
 
+    if (sl == 0)
+        return 1;
+
     /*
      * using environment variable names, both lowercase and uppercase variants,
      * compatible with other HTTP client implementations like wget, curl and git
