@@ -167,14 +167,20 @@ if(DEFINED ENV{ROOTFS})
 endif()
 include(GNUInstallDirs) # CMAKE_INSTALL_PREFIX must be set before
 
-install(TARGETS ${LIBCMP_NAME}
-  LIBRARY
-    DESTINATION  "${CMAKE_INSTALL_LIBDIR}"
-    COMPONENT lib
-  PUBLIC_HEADER
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBCMP_NAME}/openssl"
-    COMPONENT dev
-)
+# When built as a submodule (e.g. of gencmpclient), the parent project sets
+# LIBCMP_SKIP_INSTALL to avoid bundling libcmp.so* into its packages — libcmp
+# is expected to be installed separately as its own package.
+if(NOT LIBCMP_SKIP_INSTALL)
+  install(TARGETS ${LIBCMP_NAME}
+    LIBRARY
+      DESTINATION  "${CMAKE_INSTALL_LIBDIR}"
+      COMPONENT lib
+      NAMELINK_COMPONENT dev
+    PUBLIC_HEADER
+      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBCMP_NAME}/openssl"
+      COMPONENT dev
+  )
+endif()
 
 include(./Pod2Man)
 set(pages
