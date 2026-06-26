@@ -621,7 +621,9 @@ BIO *CMS_EnvelopedData_decrypt(CMS_EnvelopedData *env, BIO *detached_data,
                                EVP_PKEY *pkey, X509 *cert,
                                ASN1_OCTET_STRING *secret, unsigned int flags,
                                OSSL_LIB_CTX *libctx, const char *propq);
+#  if OPENSSL_VERSION_NUMBER < 0x30100000L
 IMPLEMENT_ASN1_ALLOC_FUNCTIONS(CMS_SignedData)
+#  endif
 /* added to OpenSSL 3.2 in #18667 */
 BIO *CMS_SignedData_verify(CMS_SignedData *sd, BIO *detached_data,
                            STACK_OF(X509) *scerts, X509_STORE *store,
