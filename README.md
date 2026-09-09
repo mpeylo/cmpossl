@@ -1,7 +1,7 @@
 # CMPforOpenSSL (cmpossl)
 
 This is an intermediate CMP, CRMF, and HTTP version abstraction library
-based on the [OpenSSL libarary](https://www.openssl-library.org/).
+based on the [OpenSSL library](https://www.openssl-library.org/).
 It is needed only if required special CMP features
 or fixes are not yet (fully) available in the OpenSSL version being used.
 
